@@ -1,0 +1,28 @@
+# Build outputs
+*.class
+target/
+build/
+temp/
+
+# IDE
+*.classpath
+*.project
+*.settings/
+.idea/
+*.iml
+
+# OS
+*.DS_Store
+Thumbs.db
+
+# Maven
+.flattened-pom.xml
+
+# Test output
+test-output/
+
+# Local dev
+.claude/
+.vscode/
+PLAN.md
+test.bat

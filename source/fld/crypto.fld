@@ -1,0 +1,854 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE func-lib PUBLIC "-//Lucee//DTD CFML Function Library 1.0//EN"
+	"dtd/web-cfmfunctionlibrary_1_0.dtd">
+<func-lib>
+	<flib-version>1.0</flib-version>
+	<short-name>crypto</short-name>
+	<uri>http://crypto.lucee.org</uri>
+	<display-name>Crypto Extension</display-name>
+	<description>BouncyCastle-based cryptographic functions</description>
+
+	<!-- GenerateKeyPair -->
+	<function>
+		<name>GenerateKeyPair</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateKeyPair</class>
+		<description>Generates a cryptographic key pair (public/private) for the specified algorithm.</description>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Algorithm and key size/curve. Examples: RSA, RSA-2048, RSA-4096, EC, P-256, P-384, P-521, Ed25519, Ed448, Kyber768, Dilithium3</description>
+		</argument>
+		<argument>
+			<name>options</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Optional struct with: format (PEM|DER|Base64, default PEM)</description>
+		</argument>
+		<return>
+			<type>struct</type>
+			<description>Struct with 'private' and 'public' keys in the requested format</description>
+		</return>
+	</function>
+
+	<!-- ValidateKeyPair -->
+	<function>
+		<name>ValidateKeyPair</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.ValidateKeyPair</class>
+		<description>Validates that a public and private key form a matching pair.</description>
+		<argument>
+			<name>privateKey</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Private key in PEM format</description>
+		</argument>
+		<argument>
+			<name>publicKey</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Public key in PEM format</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if keys match, false otherwise</description>
+		</return>
+	</function>
+
+	<!-- PemToKey -->
+	<function>
+		<name>PemToKey</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.PemToKey</class>
+		<description>Parses a PEM-encoded key string into a Java key object.</description>
+		<argument>
+			<name>pem</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>PEM-encoded key string</description>
+		</argument>
+		<return>
+			<type>any</type>
+			<description>Java PrivateKey or PublicKey object</description>
+		</return>
+	</function>
+
+	<!-- KeyToPem -->
+	<function>
+		<name>KeyToPem</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.KeyToPem</class>
+		<description>Converts a Java key object or Base64-encoded key to PEM format.</description>
+		<argument>
+			<name>key</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Java Key object or Base64-encoded key string</description>
+		</argument>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Algorithm hint when converting from Base64 (e.g., RSA, EC)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>PEM-encoded key string</description>
+		</return>
+	</function>
+
+	<!-- PemToCertificate -->
+	<function>
+		<name>PemToCertificate</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.PemToCertificate</class>
+		<description>Parses a PEM-encoded certificate string into a Java X509Certificate object.</description>
+		<argument>
+			<name>pem</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>PEM-encoded certificate string</description>
+		</argument>
+		<return>
+			<type>any</type>
+			<description>Java X509Certificate object</description>
+		</return>
+	</function>
+
+	<!-- CertificateToPem -->
+	<function>
+		<name>CertificateToPem</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.CertificateToPem</class>
+		<description>Converts a Java X509Certificate to PEM format.</description>
+		<argument>
+			<name>certificate</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Java X509Certificate object</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>PEM-encoded certificate string</description>
+		</return>
+	</function>
+
+	<!-- GenerateSelfSignedCertificate -->
+	<function>
+		<name>GenerateSelfSignedCertificate</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateSelfSignedCertificate</class>
+		<description>Generates a self-signed X.509 certificate.</description>
+		<argument>
+			<name>privateKey</name>
+			<type>any</type>
+			<required>No</required>
+			<description>Private key (PEM string or Java object). Required if keyPair not provided.</description>
+		</argument>
+		<argument>
+			<name>publicKey</name>
+			<type>any</type>
+			<required>No</required>
+			<description>Public key (PEM string or Java object). Required if keyPair not provided.</description>
+		</argument>
+		<argument>
+			<name>keyPair</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Struct with 'private' and 'public' keys (from GenerateKeyPair or GenerateRSAKeys)</description>
+		</argument>
+		<argument>
+			<name>subject</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>X.500 distinguished name (e.g., CN=localhost, O=My Company, C=AU)</description>
+		</argument>
+		<argument>
+			<name>validityDays</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>365</default>
+			<description>Number of days the certificate is valid</description>
+		</argument>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Signature algorithm (e.g., SHA256withRSA, SHA256withECDSA). Auto-detected if omitted.</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>PEM-encoded certificate</description>
+		</return>
+	</function>
+
+	<!-- CertificateInfo -->
+	<function>
+		<name>CertificateInfo</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.CertificateInfo</class>
+		<description>Extracts information from an X.509 certificate.</description>
+		<argument>
+			<name>certificate</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>PEM string or Java X509Certificate object</description>
+		</argument>
+		<return>
+			<type>struct</type>
+			<description>Struct with subject, issuer, serialNumber, validFrom, validTo, algorithm, etc.</description>
+		</return>
+	</function>
+
+	<!-- GetKeyPairFromKeystore -->
+	<function>
+		<name>GetKeyPairFromKeystore</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GetKeyPairFromKeystore</class>
+		<description>Extracts a key pair and certificate from a Java keystore (ACF compatible).</description>
+		<argument>
+			<name>keystore</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Path to keystore file</description>
+		</argument>
+		<argument>
+			<name>keystorePassword</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password for the keystore</description>
+		</argument>
+		<argument>
+			<name>keypairPassword</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Password for the key entry (defaults to keystorePassword)</description>
+		</argument>
+		<argument>
+			<name>keystoreAlias</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Alias of the key entry</description>
+		</argument>
+		<argument>
+			<name>keystoreType</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Keystore type (JKS, PKCS12). Auto-detected if omitted.</description>
+		</argument>
+		<return>
+			<type>struct</type>
+			<description>Struct with 'private', 'public', and 'certificate' in PEM format</description>
+		</return>
+	</function>
+
+	<!-- GenerateKeystore -->
+	<function>
+		<name>GenerateKeystore</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateKeystore</class>
+		<description>Generates a Java keystore with a key pair and self-signed certificate.</description>
+		<argument>
+			<name>keystore</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Path to keystore file to create</description>
+		</argument>
+		<argument>
+			<name>keystorePassword</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password for the keystore</description>
+		</argument>
+		<argument>
+			<name>alias</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Alias for the key entry</description>
+		</argument>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Key algorithm (RSA-2048, RSA-4096, P-256, P-384, Ed25519, etc.). Default: RSA-2048</description>
+		</argument>
+		<argument>
+			<name>subject</name>
+			<type>string</type>
+			<required>No</required>
+			<description>X.500 distinguished name for the certificate. Default: CN=localhost</description>
+		</argument>
+		<argument>
+			<name>options</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Optional struct with: keystoreType (PKCS12|JKS), keyPassword, validityDays</description>
+		</argument>
+		<return>
+			<type>void</type>
+			<description>Creates the keystore file</description>
+		</return>
+	</function>
+
+	<!-- KeystoreList -->
+	<function>
+		<name>KeystoreList</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.KeystoreList</class>
+		<description>Lists all aliases in a Java keystore.</description>
+		<argument>
+			<name>keystore</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Path to keystore file</description>
+		</argument>
+		<argument>
+			<name>keystorePassword</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password for the keystore</description>
+		</argument>
+		<argument>
+			<name>keystoreType</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Keystore type (JKS, PKCS12). Auto-detected if omitted.</description>
+		</argument>
+		<return>
+			<type>array</type>
+			<description>Array of alias strings</description>
+		</return>
+	</function>
+
+	<!-- Base64UrlEncode -->
+	<function>
+		<name>Base64UrlEncode</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.Base64UrlEncode</class>
+		<description>Encodes data using Base64URL encoding (URL-safe, no padding).</description>
+		<argument>
+			<name>data</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>String or binary data to encode</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Base64URL-encoded string</description>
+		</return>
+	</function>
+
+	<!-- Base64UrlDecode -->
+	<function>
+		<name>Base64UrlDecode</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.Base64UrlDecode</class>
+		<description>Decodes a Base64URL-encoded string.</description>
+		<argument>
+			<name>encoded</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Base64URL-encoded string</description>
+		</argument>
+		<argument>
+			<name>charset</name>
+			<type>string</type>
+			<required>No</required>
+			<description>If provided, returns decoded data as string using this charset</description>
+		</argument>
+		<return>
+			<type>any</type>
+			<description>Binary data, or string if charset specified</description>
+		</return>
+	</function>
+
+	<!-- GenerateSignature -->
+	<function>
+		<name>GenerateSignature</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateSignature</class>
+		<description>Creates a digital signature using a private key.</description>
+		<argument>
+			<name>data</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Data to sign (string or binary)</description>
+		</argument>
+		<argument>
+			<name>privateKey</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Private key (PEM string or Java object)</description>
+		</argument>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Signature algorithm (e.g., SHA256withRSA, SHA256withECDSA, Ed25519). Auto-detected if omitted.</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Base64-encoded signature</description>
+		</return>
+	</function>
+
+	<!-- VerifySignature -->
+	<function>
+		<name>VerifySignature</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.VerifySignature</class>
+		<description>Verifies a digital signature using a public key.</description>
+		<argument>
+			<name>data</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Original data that was signed</description>
+		</argument>
+		<argument>
+			<name>signature</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Base64-encoded signature to verify</description>
+		</argument>
+		<argument>
+			<name>publicKey</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Public key (PEM string or Java object)</description>
+		</argument>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Signature algorithm. Auto-detected if omitted.</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if signature is valid</description>
+		</return>
+	</function>
+
+	<!-- GenerateArgon2Hash -->
+	<function>
+		<name>GenerateArgon2Hash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateArgon2Hash</class>
+		<description>Generates an Argon2 password hash.</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to hash</description>
+		</argument>
+		<argument>
+			<name>variant</name>
+			<type>string</type>
+			<required>No</required>
+			<default>argon2i</default>
+			<description>Argon2 variant: argon2i, argon2d, or argon2id</description>
+		</argument>
+		<argument>
+			<name>parallelismFactor</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>1</default>
+			<description>Parallelism factor (1-10)</description>
+		</argument>
+		<argument>
+			<name>memoryCost</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>8</default>
+			<description>Memory cost in KB (8-100000)</description>
+		</argument>
+		<argument>
+			<name>iterations</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>8</default>
+			<description>Number of iterations (1-20)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Argon2 hash string</description>
+		</return>
+	</function>
+
+	<!-- Argon2CheckHash -->
+	<function>
+		<name>Argon2CheckHash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.Argon2CheckHash</class>
+		<description>Verifies a password against an Argon2 hash.</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to verify</description>
+		</argument>
+		<argument>
+			<name>hash</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Argon2 hash to check against</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if password matches hash</description>
+		</return>
+	</function>
+
+	<!-- VerifyArgon2Hash (alias for Argon2CheckHash) -->
+	<function>
+		<name>VerifyArgon2Hash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.Argon2CheckHash</class>
+		<description>Verifies a password against an Argon2 hash (alias for Argon2CheckHash).</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to verify</description>
+		</argument>
+		<argument>
+			<name>hash</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Argon2 hash to check against</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if password matches hash</description>
+		</return>
+	</function>
+
+	<!-- GenerateBCryptHash -->
+	<function>
+		<name>GenerateBCryptHash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateBCryptHash</class>
+		<description>Generates a BCrypt password hash (ACF compatible).</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to hash</description>
+		</argument>
+		<argument>
+			<name>cost</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>10</default>
+			<description>Cost factor (4-31)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>BCrypt hash string</description>
+		</return>
+	</function>
+
+	<!-- VerifyBCryptHash -->
+	<function>
+		<name>VerifyBCryptHash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.VerifyBCryptHash</class>
+		<description>Verifies a password against a BCrypt hash (ACF compatible).</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to verify</description>
+		</argument>
+		<argument>
+			<name>hash</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>BCrypt hash to check against</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if password matches hash</description>
+		</return>
+	</function>
+
+	<!-- GenerateSCryptHash -->
+	<function>
+		<name>GenerateSCryptHash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateSCryptHash</class>
+		<description>Generates an SCrypt password hash (ACF compatible).</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to hash</description>
+		</argument>
+		<argument>
+			<name>costParameter</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>16384</default>
+			<description>CPU/memory cost (N) - must be power of 2</description>
+		</argument>
+		<argument>
+			<name>blockSize</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>8</default>
+			<description>Block size (r)</description>
+		</argument>
+		<argument>
+			<name>parallelization</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>1</default>
+			<description>Parallelization factor (p)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>SCrypt hash string</description>
+		</return>
+	</function>
+
+	<!-- VerifySCryptHash -->
+	<function>
+		<name>VerifySCryptHash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.VerifySCryptHash</class>
+		<description>Verifies a password against an SCrypt hash (ACF compatible).</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to verify</description>
+		</argument>
+		<argument>
+			<name>hash</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>SCrypt hash to check against</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if password matches hash</description>
+		</return>
+	</function>
+
+	<!-- GenerateBlake2bHash -->
+	<function>
+		<name>GenerateBlake2bHash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateBlake2bHash</class>
+		<description>Generates a Blake2b hash. Blake2b is optimized for 64-bit platforms, faster than SHA-256 while being at least as secure.</description>
+		<argument>
+			<name>input</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Data to hash (string or binary)</description>
+		</argument>
+		<argument>
+			<name>outputLength</name>
+			<type>numeric</type>
+			<required>No</required>
+			<description>Output length in bytes (1-64, default 32)</description>
+		</argument>
+		<argument>
+			<name>key</name>
+			<type>any</type>
+			<required>No</required>
+			<description>Key for keyed hash mode (MAC), max 64 bytes</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Hex-encoded hash</description>
+		</return>
+	</function>
+
+	<!-- GenerateBlake2sHash -->
+	<function>
+		<name>GenerateBlake2sHash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateBlake2sHash</class>
+		<description>Generates a Blake2s hash. Blake2s is optimized for 32-bit platforms and embedded systems.</description>
+		<argument>
+			<name>input</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Data to hash (string or binary)</description>
+		</argument>
+		<argument>
+			<name>outputLength</name>
+			<type>numeric</type>
+			<required>No</required>
+			<description>Output length in bytes (1-32, default 32)</description>
+		</argument>
+		<argument>
+			<name>key</name>
+			<type>any</type>
+			<required>No</required>
+			<description>Key for keyed hash mode (MAC), max 32 bytes</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Hex-encoded hash</description>
+		</return>
+	</function>
+
+	<!-- GenerateBlake3Hash -->
+	<function>
+		<name>GenerateBlake3Hash</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateBlake3Hash</class>
+		<description>Generates a Blake3 hash. Blake3 is the latest in the Blake family - very fast, parallelizable, and supports arbitrary output lengths (XOF).</description>
+		<argument>
+			<name>input</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Data to hash (string or binary)</description>
+		</argument>
+		<argument>
+			<name>outputLength</name>
+			<type>numeric</type>
+			<required>No</required>
+			<description>Output length in bytes (any length, default 32)</description>
+		</argument>
+		<argument>
+			<name>key</name>
+			<type>any</type>
+			<required>No</required>
+			<description>Key for keyed hash mode (MAC), must be exactly 32 bytes</description>
+		</argument>
+		<argument>
+			<name>context</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Context string for key derivation mode</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Hex-encoded hash</description>
+		</return>
+	</function>
+
+	<!-- GenerateHKDFKey -->
+	<function>
+		<name>GenerateHKDFKey</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.GenerateHKDFKey</class>
+		<description>Generates derived key material using HKDF (HMAC-based Key Derivation Function). Used in TLS 1.3, Signal Protocol, etc.</description>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Hash algorithm: SHA256, SHA384, or SHA512</description>
+		</argument>
+		<argument>
+			<name>inputKeyMaterial</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Input key material (secret)</description>
+		</argument>
+		<argument>
+			<name>salt</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Salt value (can be empty string or null)</description>
+		</argument>
+		<argument>
+			<name>info</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Context/application info (can be empty string or null)</description>
+		</argument>
+		<argument>
+			<name>outputLength</name>
+			<type>numeric</type>
+			<required>Yes</required>
+			<description>Number of bytes to derive</description>
+		</argument>
+		<return>
+			<type>binary</type>
+			<description>Derived key material</description>
+		</return>
+	</function>
+
+	<!-- HKDFExtract -->
+	<function>
+		<name>HKDFExtract</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.HKDFExtract</class>
+		<description>Performs the Extract phase of HKDF to create a Pseudo-Random Key (PRK). Use with HKDFExpand to derive multiple keys.</description>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Hash algorithm: SHA256, SHA384, or SHA512</description>
+		</argument>
+		<argument>
+			<name>salt</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Salt value (can be empty string or null)</description>
+		</argument>
+		<argument>
+			<name>inputKeyMaterial</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Input key material (secret)</description>
+		</argument>
+		<return>
+			<type>binary</type>
+			<description>Pseudo-random key (PRK)</description>
+		</return>
+	</function>
+
+	<!-- HKDFExpand -->
+	<function>
+		<name>HKDFExpand</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.HKDFExpand</class>
+		<description>Performs the Expand phase of HKDF to derive key material from a PRK. Use after HKDFExtract.</description>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Hash algorithm: SHA256, SHA384, or SHA512</description>
+		</argument>
+		<argument>
+			<name>prk</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Pseudo-random key from HKDFExtract</description>
+		</argument>
+		<argument>
+			<name>info</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Context/application info (can be empty string or null)</description>
+		</argument>
+		<argument>
+			<name>outputLength</name>
+			<type>numeric</type>
+			<required>Yes</required>
+			<description>Number of bytes to derive</description>
+		</argument>
+		<return>
+			<type>binary</type>
+			<description>Derived key material</description>
+		</return>
+	</function>
+
+	<!-- KyberEncapsulate -->
+	<function>
+		<name>KyberEncapsulate</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.KyberEncapsulate</class>
+		<description>Performs Kyber (ML-KEM) key encapsulation to create a shared secret. Post-quantum secure key exchange.</description>
+		<argument>
+			<name>publicKey</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Kyber public key (PEM string or Java object)</description>
+		</argument>
+		<return>
+			<type>struct</type>
+			<description>Struct with 'sharedSecret' (binary) and 'ciphertext' (Base64 string to send to key owner)</description>
+		</return>
+	</function>
+
+	<!-- KyberDecapsulate -->
+	<function>
+		<name>KyberDecapsulate</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.KyberDecapsulate</class>
+		<description>Performs Kyber (ML-KEM) key decapsulation to recover a shared secret. Post-quantum secure key exchange.</description>
+		<argument>
+			<name>privateKey</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Kyber private key (PEM string or Java object)</description>
+		</argument>
+		<argument>
+			<name>ciphertext</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Base64-encoded ciphertext from KyberEncapsulate</description>
+		</argument>
+		<return>
+			<type>binary</type>
+			<description>Shared secret (same as sender's sharedSecret)</description>
+		</return>
+	</function>
+
+</func-lib>

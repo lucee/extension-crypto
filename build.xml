@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="clean" basedir="." name="crypto-extension">
+	<description>
+		Build Crypto Extension
+	</description>
+
+	<!-- Default properties for local builds (can be overridden via -D or parent pom) -->
+	<property name="bundleversion" value="1.0.0.0-SNAPSHOT"/>
+	<property name="maven.goal" value="package"/>
+	<property name="mvnGroupId" value="org.lucee"/>
+	<property name="mvnGroupPath" value="org/lucee"/>
+	<property name="mvnArtifactId" value="extension-crypto"/>
+	<property name="filename" value="crypto-extension"/>
+	<property name="id" value="17AB52DE-B300-A94B-E058FC978BE4542D"/>
+	<property name="label" value="Crypto Extension"/>
+	<property name="description" value="BouncyCastle-based cryptographic functions"/>
+	<property name="releaseType" value="server"/>
+	<property name="luceeCoreVersion" value="6.0.0.585"/>
+	<property name="maven.username" value=""/>
+	<property name="maven.password" value=""/>
+	<property name="gpg.passphrase" value=""/>
+
+	<property name="src" location="source/java/src"/>
+	<property name="srcFld" location="source/fld"/>
+	<property name="srcImg" location="source/images"/>
+	<property name="temp" location="temp"/>
+	<property name="build" location="build"/>
+	<property name="dist" location="target"/>
+
+	<target name="init">
+		<tstamp/>
+		<delete dir="${temp}"/>
+		<delete dir="${dist}"/>
+		<mkdir dir="${temp}"/>
+		<mkdir dir="${build}"/>
+		<mkdir dir="${dist}/"/>
+	</target>
+
+	<target name="maven-build" depends="init">
+		<condition property="is.deploy" value="true" else="false">
+			<equals arg1="${maven.goal}" arg2="deploy"/>
+		</condition>
+
+		<!-- Check if artifact already exists in Maven Central -->
+		<condition property="artifact.exists">
+			<and>
+				<equals arg1="${is.deploy}" arg2="true"/>
+				<http url="https://repo1.maven.org/maven2/${mvnGroupPath}/${mvnArtifactId}/${bundleversion}/${mvnArtifactId}-${bundleversion}.pom"/>
+			</and>
+		</condition>
+
+		<!-- Set effective goal based on whether artifact exists -->
+		<condition property="effective.goal" value="install" else="${maven.goal}">
+			<equals arg1="${artifact.exists}" arg2="true"/>
+		</condition>
+
+		<echo>goal:${maven.goal}</echo>
+		<echo>effective.goal:${effective.goal}</echo>
+		<echo>performRelease:${is.deploy}</echo>
+		<echo>groupId:${mvnGroupId}</echo>
+		<echo>groupPath:${mvnGroupPath}</echo>
+		<echo>artifactId:${mvnArtifactId}</echo>
+		<echo>bundleversion:${bundleversion}</echo>
+
+		<!-- Maven build - Windows -->
+		<exec dir="source/java" executable="cmd" osfamily="windows" failonerror="true">
+			<arg value="/c"/>
+			<arg value="mvn"/>
+			<arg value="clean"/>
+			<arg value="${effective.goal}"/>
+			<arg value="-Drevision=${bundleversion}"/>
+			<arg value="-DperformRelease=${is.deploy}"/>
+			<arg value="-e"/>
+			<arg value="--settings"/>
+			<arg value="maven-settings.xml"/>
+			<arg value="-Dmaven.username=${maven.username}"/>
+			<arg value="-Dmaven.password=${maven.password}"/>
+			<arg value="-Dgpg.passphrase=${gpg.passphrase}"/>
+		</exec>
+		<!-- Maven build - Unix/Linux -->
+		<exec dir="source/java" executable="mvn" osfamily="unix" failonerror="true">
+			<arg value="clean"/>
+			<arg value="${effective.goal}"/>
+			<arg value="-Drevision=${bundleversion}"/>
+			<arg value="-DperformRelease=${is.deploy}"/>
+			<arg value="-e"/>
+			<arg value="--settings"/>
+			<arg value="maven-settings.xml"/>
+			<arg value="-Dmaven.username=${maven.username}"/>
+			<arg value="-Dmaven.password=${maven.password}"/>
+			<arg value="-Dgpg.passphrase=${gpg.passphrase}"/>
+		</exec>
+
+		<!-- Copy dependencies - Windows -->
+		<exec dir="source/java" executable="cmd" osfamily="windows" failonerror="true">
+			<arg value="/c"/>
+			<arg value="mvn"/>
+			<arg value="-DoutputDirectory=${temp}/dependency"/>
+			<arg value="-Dmdep.copyPom=true"/>
+			<arg value="-Dmdep.useRepositoryLayout=true"/>
+			<arg value="-DexcludeScope=provided"/>
+			<arg value="-Drevision=${bundleversion}"/>
+			<arg value="dependency:copy-dependencies"/>
+		</exec>
+		<!-- Copy dependencies - Unix/Linux -->
+		<exec dir="source/java" executable="mvn" osfamily="unix" failonerror="true">
+			<arg value="-DoutputDirectory=${temp}/dependency"/>
+			<arg value="-Dmdep.copyPom=true"/>
+			<arg value="-Dmdep.useRepositoryLayout=true"/>
+			<arg value="-DexcludeScope=provided"/>
+			<arg value="-Drevision=${bundleversion}"/>
+			<arg value="dependency:copy-dependencies"/>
+		</exec>
+	</target>
+
+	<target name="copy-dependencies" depends="maven-build">
+		<!-- Create jars directory for extension bundle and dependencies -->
+		<mkdir dir="${dist}/extension/jars"/>
+
+		<!-- Copy the extension JAR to jars/ (this is the OSGi bundle) -->
+		<copy file="source/java/target/${mvnArtifactId}-${bundleversion}.jar"
+			  tofile="${dist}/extension/jars/${mvnArtifactId}-${bundleversion}.jar"/>
+
+		<!-- Copy BouncyCastle JARs to jars/ (OSGi bundles) -->
+		<copy todir="${dist}/extension/jars" flatten="true">
+			<fileset dir="${temp}/dependency">
+				<include name="**/bcprov-*.jar"/>
+				<include name="**/bcpkix-*.jar"/>
+				<include name="**/bcutil-*.jar"/>
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="createManifest" depends="copy-dependencies" description="create MANIFEST.MF file">
+		<tstamp>
+			<format property="NOW" pattern="yyyy-MM-dd HH:mm:ss" />
+		</tstamp>
+		<echo file="${dist}/extension/META-INF/MANIFEST.MF">Manifest-Version: 1.0
+Built-Date: ${NOW}
+version: "${bundleversion}"
+id: "${id}"
+name: "${label}"
+description: "${description}"
+start-bundles: true
+release-type: ${releaseType}
+lucee-core-version: "${luceeCoreVersion}"
+</echo>
+	</target>
+
+	<target name="dist" depends="createManifest" description="generate the distribution">
+		<!-- Copy the FLD files -->
+		<copy todir="${dist}/extension/flds">
+			<fileset dir="${srcFld}/">
+				<include name="*.fld"/>
+			</fileset>
+		</copy>
+		<!-- Replace version placeholder in FLD -->
+		<replaceregexp
+			file="${dist}/extension/flds/crypto.fld"
+			match="\{version\}"
+			replace="${bundleversion}"
+			byline="true"/>
+
+		<!-- Copy the logo if exists -->
+		<mkdir dir="${dist}/extension/META-INF"/>
+		<copy todir="${dist}/extension/META-INF" failonerror="false">
+			<fileset dir="${srcImg}/">
+				<include name="logo.png"/>
+			</fileset>
+		</copy>
+
+		<!-- Zip everything -->
+		<zip destfile="${dist}/${filename}-${bundleversion}.lex">
+			<zipfileset dir="${dist}/extension"/>
+		</zip>
+	</target>
+
+	<target name="clean" depends="dist" description="clean up">
+		<!-- Delete the ${build} and ${temp} directory trees -->
+		<!-- <delete dir="${build}"/>
+		<delete dir="${temp}"/> -->
+	</target>
+</project>
