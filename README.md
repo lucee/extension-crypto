@@ -2,7 +2,7 @@
 
 [![Java CI](https://github.com/lucee/extension-crypto/actions/workflows/main.yml/badge.svg)](https://github.com/lucee/extension-crypto/actions/workflows/main.yml)
 
-This extension provides modern cryptographic functions for Lucee, powered by BouncyCastle. It includes key pair generation, digital signatures, password hashing, certificate management, and key derivation functions.
+This extension provides modern cryptographic functions for Lucee, powered by [BouncyCastle](https://www.bouncycastle.org/download/bouncy-castle-java/). It includes key pair generation, digital signatures, password hashing, certificate management, and key derivation functions.
 
 ## Key Pair Generation
 
