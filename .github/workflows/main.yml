@@ -63,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lucee: ${{ fromJSON(inputs.luceeVersions || vars.LUCEE_TEST_VERSIONS || '["6.2/stable/light", "7.0/snapshot/light"]') }}
+        lucee: ${{ fromJSON(inputs.luceeVersions || '["6.2/stable/light", "7.0/stable/light"]') }}
     steps:
       - uses: actions/checkout@v4
 

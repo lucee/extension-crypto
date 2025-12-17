@@ -12,15 +12,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<id>17AB52DE-B300-A94B-E058FC978BE4542D</id>
-		<bundlename>crypto.extension</bundlename>
-		<mvnGroupId>org.lucee</mvnGroupId>
-		<mvnGroupPath>org/lucee</mvnGroupPath>
-		<mvnArtifactId>extension-crypto</mvnArtifactId>
-		<filename>crypto-extension</filename>
-		<luceeCoreVersion>6.0.0.585</luceeCoreVersion>
-		<releaseType>server</releaseType>
-		<label>Crypto Extension</label>
+		<!-- Extension properties loaded from build.properties via properties-maven-plugin -->
 		<release.url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</release.url>
 		<snapshot.url>https://oss.sonatype.org/content/repositories/snapshots/</snapshot.url>
 	</properties>
@@ -118,6 +110,26 @@
 
 	<build>
 		<plugins>
+			<!-- Load properties from build.properties -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>properties-maven-plugin</artifactId>
+				<version>1.2.1</version>
+				<executions>
+					<execution>
+						<phase>initialize</phase>
+						<goals>
+							<goal>read-project-properties</goal>
+						</goals>
+						<configuration>
+							<files>
+								<file>${basedir}/build.properties</file>
+							</files>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 			<!-- Antrun plugin to execute the Ant build -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -135,7 +147,7 @@
 									<property name="bundleversion" value="${project.version}"/>
 									<property name="bundlename" value="${bundlename}"/>
 									<property name="filename" value="${project.artifactId}"/>
-									<property name="id" value="${id}"/>
+									<property name="extensionId" value="${extensionId}"/>
 									<property name="luceeCoreVersion" value="${luceeCoreVersion}"/>
 									<property name="releaseType" value="${releaseType}"/>
 									<property name="label" value="${label}"/>
