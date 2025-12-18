@@ -1,32 +1,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://www.w3.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.lucee</groupId>
-	<artifactId>crypto-extension</artifactId>
+	<artifactId>extension-crypto</artifactId>
 	<version>1.0.0.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
+	<packaging>jar</packaging>
+
 	<name>Crypto Extension</name>
+	<description>BouncyCastle-based cryptographic functions for Lucee: key generation (RSA, EC, EdDSA), PEM handling, certificates, password hashing (Argon2, BCrypt, SCrypt), and more.</description>
+	<url>https://github.com/lucee/extension-crypto</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<!-- Extension properties loaded from build.properties via properties-maven-plugin -->
-		<release.url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</release.url>
-		<snapshot.url>https://oss.sonatype.org/content/repositories/snapshots/</snapshot.url>
-	</properties>
 
-	<scm>
-		<url>https://github.com/lucee/extension-crypto</url>
-		<connection>scm:git:git://github.com/lucee/extension-crypto.git</connection>
-		<developerConnection>scm:git:git@github.com:lucee/extension-crypto.git</developerConnection>
-		<tag>${project.version}</tag>
-	</scm>
+		<!-- Build timestamp for manifest -->
+		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
+		<build.timestamp>${maven.build.timestamp}</build.timestamp>
+	</properties>
 
 	<licenses>
 		<license>
-			<name>The GNU Lesser General Public License, Version 2.1</name>
+			<name>GNU Lesser General Public License, Version 2.1</name>
 			<url>http://www.gnu.org/licenses/lgpl-2.1.txt</url>
 			<distribution>repo</distribution>
 		</license>
@@ -58,57 +55,36 @@
 		</developer>
 	</developers>
 
-	<description>BouncyCastle-based cryptographic functions for Lucee: key generation (RSA, EC, EdDSA), PEM handling, certificates, password hashing (Argon2, BCrypt, SCrypt), and more.</description>
-	<url>https://github.com/lucee/extension-crypto</url>
-
-	<profiles>
-		<profile>
-			<id>release-sign-artifacts</id>
-			<activation>
-				<property>
-					<name>performRelease</name>
-					<value>true</value>
-				</property>
-			</activation>
-			<build>
-				<plugins>
-					<!-- GPG sign -->
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>3.0.1</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-								<configuration>
-									<files>
-										<file>${project.build.directory}/${project.artifactId}-${project.version}.lex</file>
-									</files>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-release-plugin</artifactId>
-						<version>3.0.0</version>
-						<configuration>
-							<autoVersionSubmodules>true</autoVersionSubmodules>
-							<useReleaseProfile>false</useReleaseProfile>
-							<releaseProfiles>release</releaseProfiles>
-							<goals>deploy</goals>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
+	<scm>
+		<url>https://github.com/lucee/extension-crypto</url>
+		<connection>scm:git:git://github.com/lucee/extension-crypto.git</connection>
+		<developerConnection>scm:git:git@github.com:lucee/extension-crypto.git</developerConnection>
+		<tag>${project.version}</tag>
+	</scm>
 
 	<build>
+		<sourceDirectory>source/java/src</sourceDirectory>
+
+		<resources>
+			<!-- Filter extension resources (FLD, manifest) -->
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<targetPath>${project.build.directory}/extension-resources</targetPath>
+				<includes>
+					<include>fld/*.fld</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<targetPath>${project.build.directory}/extension-resources/META-INF</targetPath>
+				<includes>
+					<include>extension-manifest.txt</include>
+				</includes>
+			</resource>
+		</resources>
+
 		<plugins>
 			<!-- Load properties from build.properties -->
 			<plugin>
@@ -130,141 +106,183 @@
 				</executions>
 			</plugin>
 
-			<!-- Antrun plugin to execute the Ant build -->
+			<!-- Copy/rename resources and final .lex file -->
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.8</version>
+				<groupId>com.coderplus.maven.plugins</groupId>
+				<artifactId>copy-rename-maven-plugin</artifactId>
+				<version>1.0.1</version>
 				<executions>
 					<execution>
-						<phase>package</phase>
+						<id>rename-manifest</id>
+						<phase>process-resources</phase>
 						<goals>
-							<goal>run</goal>
+							<goal>rename</goal>
 						</goals>
 						<configuration>
-							<target>
-								<ant antfile="build.xml" target="clean">
-									<property name="bundleversion" value="${project.version}"/>
-									<property name="bundlename" value="${bundlename}"/>
-									<property name="filename" value="${project.artifactId}"/>
-									<property name="extensionId" value="${extensionId}"/>
-									<property name="luceeCoreVersion" value="${luceeCoreVersion}"/>
-									<property name="releaseType" value="${releaseType}"/>
-									<property name="label" value="${label}"/>
-									<property name="description" value="${project.description}"/>
-									<property name="maven.goal" value="${goal}"/>
-									<property name="mvnGroupId" value="${mvnGroupId}"/>
-									<property name="mvnGroupPath" value="${mvnGroupPath}"/>
-									<property name="mvnArtifactId" value="${mvnArtifactId}"/>
-
-									<property name="maven.username" value="${env.MAVEN_USERNAME}"/>
-									<property name="maven.password" value="${env.MAVEN_PASSWORD}"/>
-									<property name="gpg.passphrase" value="${env.GPG_PASSPHRASE}"/>
-								</ant>
-								<condition property="isSnapshot" value="true" else="false">
-									<matches string="${project.version}" pattern=".*-SNAPSHOT"/>
-								</condition>
-								<condition property="deploy.url" value="${snapshot.url}">
-									<istrue value="${isSnapshot}"/>
-								</condition>
-								<condition property="deploy.url" value="${release.url}">
-									<isfalse value="${isSnapshot}"/>
-								</condition>
-								<echo message="Deploying to URL: ${deploy.url}" />
-							</target>
-							<exportAntProperties>true</exportAntProperties>
-							<propertySets>
-								<propertySet>
-									<propertyRef prefix="env."/>
-								</propertySet>
-							</propertySets>
+							<sourceFile>${project.build.directory}/extension-resources/META-INF/extension-manifest.txt</sourceFile>
+							<destinationFile>${project.build.directory}/extension-resources/META-INF/MANIFEST.MF</destinationFile>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-fld</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<sourceFile>${project.build.directory}/extension-resources/fld/crypto.fld</sourceFile>
+							<destinationFile>${project.build.directory}/extension-resources/flds/crypto.fld</destinationFile>
+						</configuration>
+					</execution>
+					<execution>
+						<id>rename-lex</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>rename</goal>
+						</goals>
+						<configuration>
+							<sourceFile>${project.build.directory}/${project.artifactId}-${project.version}.zip</sourceFile>
+							<destinationFile>${project.build.directory}/${project.artifactId}-${project.version}.lex</destinationFile>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
-			<!-- Build Helper Plugin to attach additional artifacts -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+				<configuration>
+					<source>11</source>
+					<target>11</target>
+				</configuration>
+			</plugin>
+
+			<!-- Copy specific dependency JARs for bundling -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/dependency-jars</outputDirectory>
+							<includeScope>compile</includeScope>
+							<includeArtifactIds>bcprov-jdk18on,bcpkix-jdk18on,bcutil-jdk18on,nimbus-jose-jwt</includeArtifactIds>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- JAR with OSGi manifest -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.3.0</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Bundle-Name>extension-crypto</Bundle-Name>
+							<Bundle-SymbolicName>extension-crypto</Bundle-SymbolicName>
+							<Bundle-Version>${project.version}</Bundle-Version>
+							<Export-Package>org.lucee.extension.crypto,org.lucee.extension.crypto.util</Export-Package>
+							<Require-Bundle>bcprov;bundle-version="1.83",bcpkix;bundle-version="1.83",bcutil;bundle-version="1.83"</Require-Bundle>
+							<DynamicImport-Package>*</DynamicImport-Package>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<!-- Assemble .lex extension package -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<id>create-lex</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/lex.xml</descriptor>
+							</descriptors>
+							<finalName>${project.artifactId}-${project.version}</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Source JAR -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.3.0</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Javadoc JAR -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.6.3</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<source>11</source>
+					<doclint>none</doclint>
+				</configuration>
+			</plugin>
+
+			<!-- Flatten POM for publishing -->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>3.2.0</version>
+				<artifactId>flatten-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<configuration>
+					<updatePomFile>true</updatePomFile>
+					<flattenMode>oss</flattenMode>
+				</configuration>
 				<executions>
 					<execution>
-						<id>attach-artifacts</id>
-						<phase>package</phase>
+						<id>flatten</id>
+						<phase>process-resources</phase>
 						<goals>
-							<goal>attach-artifact</goal>
+							<goal>flatten</goal>
 						</goals>
-						<configuration>
-							<artifacts>
-								<artifact>
-									<file>${project.build.directory}/${project.artifactId}-${project.version}.lex</file>
-									<type>lex</type>
-								</artifact>
-							</artifacts>
-						</configuration>
 					</execution>
-				</executions>
-			</plugin>
-
-			<!-- Clean plugin to remove extra folders -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-clean-plugin</artifactId>
-				<version>3.1.0</version>
-				<executions>
 					<execution>
-						<id>cleanup</id>
-						<phase>post-package</phase>
+						<id>flatten.clean</id>
+						<phase>clean</phase>
 						<goals>
 							<goal>clean</goal>
 						</goals>
-						<configuration>
-							<filesets>
-								<fileset>
-									<directory>${project.build.directory}/antrun</directory>
-									<includes>
-										<include>**/*</include>
-									</includes>
-								</fileset>
-								<fileset>
-									<directory>${project.build.directory}/archive-tmp</directory>
-									<includes>
-										<include>**/*</include>
-									</includes>
-								</fileset>
-							</filesets>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
-			<!-- Maven Deploy Plugin to deploy the .lex file -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<version>3.0.0-M1</version>
-				<executions>
-					<execution>
-						<id>default-deploy</id>
-						<phase>deploy</phase>
-						<goals>
-							<goal>deploy-file</goal>
-						</goals>
-						<configuration>
-							<file>${project.build.directory}/${project.artifactId}-${project.version}.lex</file>
-							<groupId>${project.groupId}</groupId>
-							<artifactId>${project.artifactId}</artifactId>
-							<version>${project.version}</version>
-							<repositoryId>ossrh</repositoryId>
-							<url>${deploy.url}</url>
-							<packaging>lex</packaging>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<!-- Nexus Staging Maven Plugin to automate the release process -->
+			<!-- Central Publishing -->
 			<plugin>
 				<groupId>org.sonatype.central</groupId>
 				<artifactId>central-publishing-maven-plugin</artifactId>
@@ -277,4 +295,77 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<dependencies>
+		<!-- BouncyCastle Core Provider -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk18on</artifactId>
+			<version>1.83</version>
+		</dependency>
+
+		<!-- BouncyCastle PKIX (PEM, certs, CMS) -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk18on</artifactId>
+			<version>1.83</version>
+		</dependency>
+
+		<!-- Nimbus JOSE+JWT for JWT support -->
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>10.6</version>
+		</dependency>
+
+		<!-- Lucee (provided - not bundled) -->
+		<dependency>
+			<groupId>org.lucee</groupId>
+			<artifactId>lucee</artifactId>
+			<version>6.2.3.35</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>sonatype-central-snapshots</id>
+			<name>Sonatype Central Snapshots</name>
+			<url>https://central.sonatype.com/repository/maven-snapshots</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<profiles>
+		<profile>
+			<id>release-sign-artifacts</id>
+			<activation>
+				<property>
+					<name>performRelease</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>3.0.1</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

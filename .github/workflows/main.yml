@@ -32,9 +32,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          key: maven
 
       - name: Extract version number
         id: extract-version
@@ -43,7 +41,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build extension
-        run: mvn -B -e -f pom.xml clean install -Dgoal=install
+        run: mvn -B -e clean verify
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -71,9 +69,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          key: maven
 
       - name: Cache Lucee files
         uses: actions/cache@v4
@@ -122,9 +118,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          key: maven
 
       - name: Import GPG key
         run: |
@@ -140,11 +134,11 @@ jobs:
         run: |
           if [[ "${{ needs.build.outputs.version }}" == *-SNAPSHOT ]]; then
             echo "------- Maven Deploy snapshot -------";
-            mvn -B -e -f pom.xml clean deploy -Dgoal=deploy --settings maven-settings.xml
+            mvn -B -e clean deploy --settings maven-settings.xml
           elif [[ "${{ needs.build.outputs.version }}" == *-ALPHA ]]; then
             echo "------- Maven Install alpha -------";
-            mvn -B -e -f pom.xml clean install -Dgoal=install --settings maven-settings.xml
+            mvn -B -e clean install --settings maven-settings.xml
           else
             echo "------- Maven Deploy release -------";
-            mvn -B -e -f pom.xml clean deploy -Dgoal=deploy -DperformRelease=true --settings maven-settings.xml
+            mvn -B -e clean deploy -DperformRelease=true --settings maven-settings.xml
           fi

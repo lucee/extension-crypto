@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Built-Date: ${build.timestamp}
+version: "${project.version}"
+id: "${extensionId}"
+name: "${label}"
+description: "${description}"
+start-bundles: true
+release-type: ${releaseType}
+lucee-core-version: "${luceeCoreVersion}"
