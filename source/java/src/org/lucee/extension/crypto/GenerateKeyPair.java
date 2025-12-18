@@ -10,6 +10,7 @@ import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
 import lucee.runtime.type.Struct;
+import lucee.runtime.util.Cast;
 
 /**
  * Generates a cryptographic key pair for the specified algorithm.
@@ -100,14 +101,16 @@ public class GenerateKeyPair extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 1 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "GenerateKeyPair", 1, "algorithm", "Algorithm is required", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String algorithm = eng.getCastUtil().toString( args[0] );
-		Struct options = args.length > 1 && args[1] != null ? eng.getCastUtil().toStruct( args[1] ) : null;
+		String algorithm = cast.toString( args[0] );
+		Struct options = args.length > 1 && args[1] != null ? cast.toStruct( args[1] ) : null;
 
 		return call( pc, algorithm, options );
 	}

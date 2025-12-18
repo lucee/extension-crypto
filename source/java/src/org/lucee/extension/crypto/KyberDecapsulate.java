@@ -14,6 +14,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Performs Kyber key decapsulation to recover a shared secret.
@@ -72,6 +73,7 @@ public class KyberDecapsulate extends BIF {
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
 		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
 
 		if ( args.length < 2 ) {
 			throw eng.getExceptionUtil().createFunctionException(
@@ -81,7 +83,7 @@ public class KyberDecapsulate extends BIF {
 		}
 
 		Object privateKey = args[0];
-		String ciphertext = eng.getCastUtil().toString( args[1] );
+		String ciphertext = cast.toString( args[1] );
 
 		return call( pc, privateKey, ciphertext );
 	}

@@ -12,13 +12,17 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Generates an Argon2 password hash.
  *
  * Usage:
  *   hash = GenerateArgon2Hash( "password" )
- *   hash = GenerateArgon2Hash( "password", "argon2id", 1, 65536, 3 )
+ *   hash = GenerateArgon2Hash( "password", "argon2id", 4, 65536, 3 )
+ *
+ * Defaults: argon2id, parallelism=4, memory=65536 KB (64MB), iterations=3
+ * These follow OWASP recommendations for password hashing.
  */
 public class GenerateArgon2Hash extends BIF {
 
@@ -27,20 +31,26 @@ public class GenerateArgon2Hash extends BIF {
 	private static final int HASH_LENGTH = 32;
 	private static final int SALT_LENGTH = 16;
 
+	// Secure defaults per OWASP recommendations
+	private static final String DEFAULT_VARIANT = "argon2id";
+	private static final int DEFAULT_PARALLELISM = 4;
+	private static final int DEFAULT_MEMORY = 65536; // 64 MB
+	private static final int DEFAULT_ITERATIONS = 3;
+
 	public static String call( PageContext pc, String input ) throws PageException {
-		return call( pc, input, "argon2i", 1, 8, 8 );
+		return call( pc, input, DEFAULT_VARIANT, DEFAULT_PARALLELISM, DEFAULT_MEMORY, DEFAULT_ITERATIONS );
 	}
 
 	public static String call( PageContext pc, String input, String variant ) throws PageException {
-		return call( pc, input, variant, 1, 8, 8 );
+		return call( pc, input, variant, DEFAULT_PARALLELISM, DEFAULT_MEMORY, DEFAULT_ITERATIONS );
 	}
 
 	public static String call( PageContext pc, String input, String variant, Number parallelismFactor ) throws PageException {
-		return call( pc, input, variant, parallelismFactor, 8, 8 );
+		return call( pc, input, variant, parallelismFactor, DEFAULT_MEMORY, DEFAULT_ITERATIONS );
 	}
 
 	public static String call( PageContext pc, String input, String variant, Number parallelismFactor, Number memoryCost ) throws PageException {
-		return call( pc, input, variant, parallelismFactor, memoryCost, 8 );
+		return call( pc, input, variant, parallelismFactor, memoryCost, DEFAULT_ITERATIONS );
 	}
 
 	public static String call( PageContext pc, String input, String variant, Number parallelismFactor,
@@ -99,7 +109,7 @@ public class GenerateArgon2Hash extends BIF {
 
 	private static int parseVariant( String variant ) throws PageException {
 		if ( variant == null || variant.trim().isEmpty() ) {
-			variant = "argon2i";
+			variant = DEFAULT_VARIANT;
 		}
 
 		switch ( variant.trim().toLowerCase() ) {
@@ -146,17 +156,19 @@ public class GenerateArgon2Hash extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 1 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "GenerateArgon2Hash", 1, "input", "Input is required", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String input = eng.getCastUtil().toString( args[0] );
-		String variant = args.length > 1 && args[1] != null ? eng.getCastUtil().toString( args[1] ) : "argon2i";
-		Number parallelism = args.length > 2 && args[2] != null ? eng.getCastUtil().toInteger( args[2] ) : 1;
-		Number memory = args.length > 3 && args[3] != null ? eng.getCastUtil().toInteger( args[3] ) : 8;
-		Number iterations = args.length > 4 && args[4] != null ? eng.getCastUtil().toInteger( args[4] ) : 8;
+		String input = cast.toString( args[0] );
+		String variant = args.length > 1 && args[1] != null ? cast.toString( args[1] ) : DEFAULT_VARIANT;
+		Number parallelism = args.length > 2 && args[2] != null ? cast.toInteger( args[2] ) : DEFAULT_PARALLELISM;
+		Number memory = args.length > 3 && args[3] != null ? cast.toInteger( args[3] ) : DEFAULT_MEMORY;
+		Number iterations = args.length > 4 && args[4] != null ? cast.toInteger( args[4] ) : DEFAULT_ITERATIONS;
 
 		return call( pc, input, variant, parallelism, memory, iterations );
 	}

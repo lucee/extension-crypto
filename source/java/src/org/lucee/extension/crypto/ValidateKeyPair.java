@@ -12,6 +12,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Validates that a public and private key form a matching pair.
@@ -53,14 +54,16 @@ public class ValidateKeyPair extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 2 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "ValidateKeyPair", 2, "publicKey", "Both privateKey and publicKey are required", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String privateKey = eng.getCastUtil().toString( args[0] );
-		String publicKey = eng.getCastUtil().toString( args[1] );
+		String privateKey = cast.toString( args[0] );
+		String publicKey = cast.toString( args[1] );
 
 		return call( pc, privateKey, publicKey );
 	}

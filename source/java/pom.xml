@@ -202,6 +202,13 @@
 			<version>1.83</version>
 		</dependency>
 
+		<!-- Nimbus JOSE+JWT for JWT support -->
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>10.0.1</version>
+		</dependency>
+
 		<!-- Lucee (provided - not bundled) -->
 		<dependency>
 			<groupId>org.lucee</groupId>

@@ -125,6 +125,13 @@
 				<include name="**/bcutil-*.jar"/>
 			</fileset>
 		</copy>
+
+		<!-- Copy Nimbus JOSE+JWT JAR for JWT support -->
+		<copy todir="${dist}/extension/jars" flatten="true">
+			<fileset dir="${temp}/dependency">
+				<include name="**/nimbus-jose-jwt-*.jar"/>
+			</fileset>
+		</copy>
 	</target>
 
 	<target name="createManifest" depends="copy-dependencies" description="create MANIFEST.MF file">

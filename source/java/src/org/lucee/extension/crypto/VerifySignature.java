@@ -11,6 +11,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Verifies a digital signature using a public key.
@@ -58,15 +59,20 @@ public class VerifySignature extends BIF {
 
 			return verifier.verify( signatureBytes );
 		}
-		catch ( Exception e ) {
-			// Invalid signature or error
+		catch ( java.security.SignatureException e ) {
+			// Invalid signature - this is expected for mismatched signatures
 			return false;
+		}
+		catch ( Exception e ) {
+			// Unexpected error (bad key, wrong algorithm, etc) - rethrow so caller knows something is wrong
+			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
 	}
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
 		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
 
 		if ( args.length < 3 ) {
 			throw eng.getExceptionUtil().createFunctionException(
@@ -76,9 +82,9 @@ public class VerifySignature extends BIF {
 		}
 
 		Object data = args[0];
-		String signature = eng.getCastUtil().toString( args[1] );
+		String signature = cast.toString( args[1] );
 		Object publicKey = args[2];
-		String algorithm = args.length > 3 && args[3] != null ? eng.getCastUtil().toString( args[3] ) : null;
+		String algorithm = args.length > 3 && args[3] != null ? cast.toString( args[3] ) : null;
 
 		return call( pc, data, signature, publicKey, algorithm );
 	}

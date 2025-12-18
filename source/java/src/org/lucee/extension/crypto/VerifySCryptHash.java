@@ -10,6 +10,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Verifies a password against an SCrypt hash (ACF compatible).
@@ -125,14 +126,16 @@ public class VerifySCryptHash extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 2 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "VerifySCryptHash", 2, "hash", "Input and hash are required", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String input = eng.getCastUtil().toString( args[0] );
-		String hash = eng.getCastUtil().toString( args[1] );
+		String input = cast.toString( args[0] );
+		String hash = cast.toString( args[1] );
 
 		return call( pc, input, hash );
 	}

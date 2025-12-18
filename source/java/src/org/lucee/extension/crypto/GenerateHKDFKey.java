@@ -14,6 +14,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Generates derived key material using HKDF (HMAC-based Key Derivation Function).
@@ -109,18 +110,20 @@ public class GenerateHKDFKey extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 5 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "GenerateHKDFKey", 5, "outputLength",
 					"Required arguments: algorithm, inputKeyMaterial, salt, info, outputLength", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String algorithm = eng.getCastUtil().toString( args[0] );
+		String algorithm = cast.toString( args[0] );
 		Object ikm = args[1];
 		Object salt = args[2];
 		Object info = args[3];
-		Number outputLength = eng.getCastUtil().toInteger( args[4] );
+		Number outputLength = cast.toInteger( args[4] );
 
 		return call( pc, algorithm, ikm, salt, info, outputLength );
 	}

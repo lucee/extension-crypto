@@ -851,4 +851,130 @@
 		</return>
 	</function>
 
+	<!-- ==================== JWT Functions ==================== -->
+
+	<!-- JwtSign -->
+	<function>
+		<name>JwtSign</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.JwtSign</class>
+		<description>Creates a signed JWT (JWS). Supports HMAC (HS256/384/512), RSA (RS256/384/512, PS256/384/512), and ECDSA (ES256/384/512) algorithms.</description>
+		<argument>
+			<name>claims</name>
+			<type>struct</type>
+			<required>Yes</required>
+			<description>JWT payload claims. Standard claims: sub, iss, aud, exp, nbf, iat, jti. Custom claims allowed.</description>
+		</argument>
+		<argument>
+			<name>key</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Signing key. For HMAC: string or byte array. For RSA/EC: PEM string or Java PrivateKey object.</description>
+		</argument>
+		<argument>
+			<name>algorithm</name>
+			<type>string</type>
+			<required>No</required>
+			<description>JWS algorithm: HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512, ES256, ES384, ES512. Auto-detected if omitted.</description>
+		</argument>
+		<argument>
+			<name>expiresIn</name>
+			<type>numeric</type>
+			<required>No</required>
+			<description>Token expiration in seconds from now. Sets the 'exp' claim.</description>
+		</argument>
+		<argument>
+			<name>issuer</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Token issuer. Sets the 'iss' claim (overrides claims struct).</description>
+		</argument>
+		<argument>
+			<name>audience</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Token audience. Sets the 'aud' claim (overrides claims struct).</description>
+		</argument>
+		<argument>
+			<name>kid</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Key ID to include in the JWT header.</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Signed JWT string (e.g., eyJhbGciOiJIUzI1NiIs...)</description>
+		</return>
+	</function>
+
+	<!-- JwtVerify -->
+	<function>
+		<name>JwtVerify</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.JwtVerify</class>
+		<description>Verifies a signed JWT and returns the claims. Validates signature, expiration, not-before, issuer, and audience.</description>
+		<argument>
+			<name>token</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>JWT string to verify.</description>
+		</argument>
+		<argument>
+			<name>key</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Verification key. For HMAC: string or byte array. For RSA/EC: PEM string or Java PublicKey object.</description>
+		</argument>
+		<argument>
+			<name>algorithms</name>
+			<type>any</type>
+			<required>No</required>
+			<description>Allowed algorithms. Array or comma-separated string. Security best practice to restrict algorithms.</description>
+		</argument>
+		<argument>
+			<name>issuer</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Required issuer (iss claim). Validation fails if token issuer doesn't match.</description>
+		</argument>
+		<argument>
+			<name>audience</name>
+			<type>string</type>
+			<required>No</required>
+			<description>Required audience (aud claim). Validation fails if audience is not in token's audience list.</description>
+		</argument>
+		<argument>
+			<name>clockSkew</name>
+			<type>numeric</type>
+			<required>No</required>
+			<description>Clock skew tolerance in seconds for exp/nbf validation. Default 0.</description>
+		</argument>
+		<argument>
+			<name>throwOnError</name>
+			<type>boolean</type>
+			<required>No</required>
+			<default>true</default>
+			<description>If true (default), throws on invalid token. If false, returns struct with valid, claims, error.</description>
+		</argument>
+		<return>
+			<type>any</type>
+			<description>If valid: struct of claims. If throwOnError=false and invalid: struct with valid=false, error message.</description>
+		</return>
+	</function>
+
+	<!-- JwtDecode -->
+	<function>
+		<name>JwtDecode</name>
+		<class bundle-name="extension-crypto" bundle-version="{version}">org.lucee.extension.crypto.JwtDecode</class>
+		<description>Decodes a JWT without verifying the signature. Useful for debugging and inspection. WARNING: Do not trust decoded claims without verification!</description>
+		<argument>
+			<name>token</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>JWT string to decode.</description>
+		</argument>
+		<return>
+			<type>struct</type>
+			<description>Struct with 'header' (alg, typ, kid, etc.), 'payload' (claims), and 'signature' (Base64URL string).</description>
+		</return>
+	</function>
+
 </func-lib>

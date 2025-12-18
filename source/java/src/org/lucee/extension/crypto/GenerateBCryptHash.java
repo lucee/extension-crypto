@@ -9,6 +9,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Generates a BCrypt password hash (ACF compatible).
@@ -53,14 +54,16 @@ public class GenerateBCryptHash extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 1 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "GenerateBCryptHash", 1, "input", "Input is required", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String input = eng.getCastUtil().toString( args[0] );
-		Number cost = args.length > 1 && args[1] != null ? eng.getCastUtil().toInteger( args[1] ) : 10;
+		String input = cast.toString( args[0] );
+		Number cost = args.length > 1 && args[1] != null ? cast.toInteger( args[1] ) : 10;
 
 		return call( pc, input, cost );
 	}

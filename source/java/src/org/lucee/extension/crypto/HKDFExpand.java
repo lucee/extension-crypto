@@ -14,6 +14,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Performs the Expand phase of HKDF to derive key material from a PRK.
@@ -107,17 +108,19 @@ public class HKDFExpand extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 4 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "HKDFExpand", 4, "outputLength",
 					"Required arguments: algorithm, prk, info, outputLength", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String algorithm = eng.getCastUtil().toString( args[0] );
+		String algorithm = cast.toString( args[0] );
 		Object prk = args[1];
 		Object info = args[2];
-		Number outputLength = eng.getCastUtil().toInteger( args[3] );
+		Number outputLength = cast.toInteger( args[3] );
 
 		return call( pc, algorithm, prk, info, outputLength );
 	}

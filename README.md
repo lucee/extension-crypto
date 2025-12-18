@@ -4,6 +4,8 @@
 
 This extension provides modern cryptographic functions for Lucee, powered by [BouncyCastle](https://www.bouncycastle.org/download/bouncy-castle-java/). It includes key pair generation, digital signatures, password hashing, certificate management, and key derivation functions.
 
+It also includes JWT functionality using [Nimbus JOSE + JWT](https://connect2id.com/products/nimbus-jose-jwt) as it also requires Bouncy Castle.
+
 ## Key Pair Generation
 
 Generate cryptographic key pairs for various algorithms including RSA, Elliptic Curve, EdDSA, and post-quantum algorithms.
@@ -58,6 +60,116 @@ signature = GenerateSignature( "data to sign", keys.private );
 // Verify signature
 isValid = VerifySignature( "data to sign", signature, keys.public );
 ```
+
+## JSON Web Tokens (JWT)
+
+Create, verify, and decode JWTs using HMAC or asymmetric algorithms.
+
+### Sign a JWT
+
+```cfml
+// HMAC (symmetric) - simple shared secret
+token = JwtSign(
+    claims = { sub: "user123", role: "admin" },
+    key = "your-256-bit-secret"
+);
+
+// With expiration (seconds from now)
+token = JwtSign(
+    claims = { sub: "user123" },
+    key = "secret",
+    expiresIn = 3600    // 1 hour
+);
+
+// RSA/EC (asymmetric) - use private key to sign
+keys = GenerateKeyPair( "RS256" );
+token = JwtSign(
+    claims = { sub: "user123" },
+    key = keys.private,
+    algorithm = "RS256",
+    issuer = "https://myapp.com",
+    audience = "https://api.myapp.com"
+);
+
+// EdDSA (modern, fast)
+keys = GenerateKeyPair( "Ed25519" );
+token = JwtSign(
+    claims = { sub: "user123" },
+    key = keys.private,
+    algorithm = "EdDSA"
+);
+
+// With Key ID for key rotation
+token = JwtSign(
+    claims = { sub: "user123" },
+    key = keys.private,
+    algorithm = "RS256",
+    kid = "key-2024-01"
+);
+```
+
+### Verify a JWT
+
+```cfml
+// Verify with HMAC secret
+claims = JwtVerify( token = token, key = "your-256-bit-secret" );
+writeOutput( claims.sub );  // "user123"
+
+// Verify with public key
+claims = JwtVerify( token = token, key = keys.public );
+
+// With issuer/audience validation
+claims = JwtVerify(
+    token = token,
+    key = keys.public,
+    issuer = "https://myapp.com",
+    audience = "https://api.myapp.com"
+);
+
+// Restrict allowed algorithms (security best practice)
+claims = JwtVerify(
+    token = token,
+    key = keys.public,
+    algorithms = "RS256"           // single algorithm
+    // or: algorithms = ["RS256", "RS384"]  // multiple
+);
+
+// Clock skew tolerance (seconds) for exp/nbf validation
+claims = JwtVerify(
+    token = token,
+    key = "secret",
+    clockSkew = 60    // allow 60 seconds leeway
+);
+
+// Non-throwing mode - returns result struct instead of throwing
+result = JwtVerify( token = token, key = "secret", throwOnError = false );
+if ( result.valid ) {
+    writeOutput( result.claims.sub );
+} else {
+    writeOutput( "Error: " & result.error );
+}
+```
+
+### Decode a JWT (without verification)
+
+Useful for debugging or when you need to inspect a token before verification.
+
+```cfml
+parts = JwtDecode( token );
+writeOutput( parts.header.alg );      // "RS256"
+writeOutput( parts.payload.sub );     // "user123"
+writeOutput( parts.signature );       // base64url signature
+```
+
+### Supported JWT Algorithms
+
+| Algorithm | Type | Description |
+|-----------|------|-------------|
+| `HS256`, `HS384`, `HS512` | HMAC | Symmetric, shared secret |
+| `RS256`, `RS384`, `RS512` | RSA | Asymmetric, RSA keys |
+| `ES256`, `ES384`, `ES512` | ECDSA | Asymmetric, EC keys (P-256/384/521) |
+| `PS256`, `PS384`, `PS512` | RSA-PSS | Asymmetric, RSA-PSS padding |
+| `EdDSA` | EdDSA | Asymmetric, Ed25519/Ed448 keys |
 
 ## Password Hashing
 

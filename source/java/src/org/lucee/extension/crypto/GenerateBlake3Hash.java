@@ -10,6 +10,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Generates a Blake3 hash.
@@ -113,16 +114,18 @@ public class GenerateBlake3Hash extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 1 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "GenerateBlake3Hash", 1, "input", "Input is required", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
 		Object input = args[0];
-		Number outputLength = args.length > 1 && args[1] != null ? eng.getCastUtil().toInteger( args[1] ) : DEFAULT_OUTPUT_LENGTH;
+		Number outputLength = args.length > 1 && args[1] != null ? cast.toInteger( args[1] ) : DEFAULT_OUTPUT_LENGTH;
 		Object key = args.length > 2 ? args[2] : null;
-		String context = args.length > 3 && args[3] != null ? eng.getCastUtil().toString( args[3] ) : null;
+		String context = args.length > 3 && args[3] != null ? cast.toString( args[3] ) : null;
 
 		return call( pc, input, outputLength, key, context );
 	}

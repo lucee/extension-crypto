@@ -9,6 +9,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Decodes a Base64URL-encoded string.
@@ -42,14 +43,16 @@ public class Base64UrlDecode extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 1 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "Base64UrlDecode", 1, "encoded", "Encoded string is required", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String encoded = eng.getCastUtil().toString( args[0] );
-		String charset = args.length > 1 && args[1] != null ? eng.getCastUtil().toString( args[1] ) : null;
+		String encoded = cast.toString( args[0] );
+		String charset = args.length > 1 && args[1] != null ? cast.toString( args[1] ) : null;
 
 		return call( pc, encoded, charset );
 	}

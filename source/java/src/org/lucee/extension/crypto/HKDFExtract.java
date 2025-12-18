@@ -13,6 +13,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Performs the Extract phase of HKDF to create a Pseudo-Random Key (PRK).
@@ -93,14 +94,16 @@ public class HKDFExtract extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 3 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "HKDFExtract", 3, "inputKeyMaterial",
 					"Required arguments: algorithm, salt, inputKeyMaterial", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
-		String algorithm = eng.getCastUtil().toString( args[0] );
+		String algorithm = cast.toString( args[0] );
 		Object salt = args[1];
 		Object ikm = args[2];
 

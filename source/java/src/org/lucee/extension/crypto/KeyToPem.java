@@ -11,6 +11,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Converts a Java key object or Base64-encoded key to PEM format.
@@ -71,14 +72,16 @@ public class KeyToPem extends BIF {
 
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
+		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
+
 		if ( args.length < 1 ) {
-			throw CFMLEngineFactory.getInstance().getExceptionUtil()
+			throw eng.getExceptionUtil()
 				.createFunctionException( pc, "KeyToPem", 1, "key", "Key is required", null );
 		}
 
-		CFMLEngine eng = CFMLEngineFactory.getInstance();
 		Object key = args[0];
-		String algorithm = args.length > 1 && args[1] != null ? eng.getCastUtil().toString( args[1] ) : null;
+		String algorithm = args.length > 1 && args[1] != null ? cast.toString( args[1] ) : null;
 
 		return call( pc, key, algorithm );
 	}

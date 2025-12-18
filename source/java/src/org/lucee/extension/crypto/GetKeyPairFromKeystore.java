@@ -15,6 +15,7 @@ import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
 import lucee.runtime.type.Struct;
+import lucee.runtime.util.Cast;
 
 /**
  * Extracts a key pair and certificate from a Java keystore (ACF compatible).
@@ -91,6 +92,7 @@ public class GetKeyPairFromKeystore extends BIF {
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
 		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
 
 		if ( args.length < 4 ) {
 			throw eng.getExceptionUtil().createFunctionException(
@@ -99,11 +101,11 @@ public class GetKeyPairFromKeystore extends BIF {
 			);
 		}
 
-		String keystorePath = eng.getCastUtil().toString( args[0] );
-		String keystorePassword = eng.getCastUtil().toString( args[1] );
-		String keypairPassword = args.length > 2 && args[2] != null ? eng.getCastUtil().toString( args[2] ) : null;
-		String alias = eng.getCastUtil().toString( args[3] );
-		String keystoreType = args.length > 4 && args[4] != null ? eng.getCastUtil().toString( args[4] ) : null;
+		String keystorePath = cast.toString( args[0] );
+		String keystorePassword = cast.toString( args[1] );
+		String keypairPassword = args.length > 2 && args[2] != null ? cast.toString( args[2] ) : null;
+		String alias = cast.toString( args[3] );
+		String keystoreType = args.length > 4 && args[4] != null ? cast.toString( args[4] ) : null;
 
 		return call( pc, keystorePath, keystorePassword, keypairPassword, alias, keystoreType );
 	}

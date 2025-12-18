@@ -21,6 +21,7 @@ import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
 import lucee.runtime.type.Struct;
+import lucee.runtime.util.Cast;
 
 /**
  * Generates a self-signed X.509 certificate.
@@ -135,6 +136,7 @@ public class GenerateSelfSignedCertificate extends BIF {
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
 		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
 
 		// Named parameters handling - this is a complex function
 		// For simplicity, we'll support positional: privateKey, publicKey, keyPair, subject, validityDays, algorithm
@@ -142,14 +144,14 @@ public class GenerateSelfSignedCertificate extends BIF {
 		Object publicKey = args.length > 1 && !eng.getDecisionUtil().isEmpty( args[1] ) ? args[1] : null;
 		Struct keyPair = null;
 		if ( args.length > 2 && args[2] != null ) {
-			Struct s = eng.getCastUtil().toStruct( args[2], null );
+			Struct s = cast.toStruct( args[2], null );
 			if ( s != null && s.size() > 0 ) {
 				keyPair = s;
 			}
 		}
-		String subject = args.length > 3 ? eng.getCastUtil().toString( args[3] ) : null;
-		Number validityDays = args.length > 4 && args[4] != null ? eng.getCastUtil().toInteger( args[4] ) : 365;
-		String algorithm = args.length > 5 && args[5] != null ? eng.getCastUtil().toString( args[5] ) : null;
+		String subject = args.length > 3 ? cast.toString( args[3] ) : null;
+		Number validityDays = args.length > 4 && args[4] != null ? cast.toInteger( args[4] ) : 365;
+		String algorithm = args.length > 5 && args[5] != null ? cast.toString( args[5] ) : null;
 
 		if ( subject == null || subject.isEmpty() ) {
 			throw eng.getExceptionUtil().createFunctionException(

@@ -23,6 +23,7 @@ import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
 import lucee.runtime.type.Struct;
+import lucee.runtime.util.Cast;
 
 /**
  * Generates a Java keystore with a key pair and self-signed certificate.
@@ -61,6 +62,7 @@ public class GenerateKeystore extends BIF {
 			}
 
 			// Parse options
+			Cast cast = eng.getCastUtil();
 			String keystoreType = "PKCS12";
 			String keyPassword = keystorePassword;
 			int validityDays = 365;
@@ -68,15 +70,15 @@ public class GenerateKeystore extends BIF {
 			if ( options != null ) {
 				Object typeObj = options.get( "keystoreType", null );
 				if ( typeObj != null ) {
-					keystoreType = eng.getCastUtil().toString( typeObj ).trim().toUpperCase();
+					keystoreType = cast.toString( typeObj ).trim().toUpperCase();
 				}
 				Object keyPassObj = options.get( "keyPassword", null );
 				if ( keyPassObj != null ) {
-					keyPassword = eng.getCastUtil().toString( keyPassObj );
+					keyPassword = cast.toString( keyPassObj );
 				}
 				Object daysObj = options.get( "validityDays", null );
 				if ( daysObj != null ) {
-					validityDays = eng.getCastUtil().toIntValue( daysObj );
+					validityDays = cast.toIntValue( daysObj );
 				}
 			}
 
@@ -138,6 +140,7 @@ public class GenerateKeystore extends BIF {
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
 		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
 
 		if ( args.length < 3 ) {
 			throw eng.getExceptionUtil().createFunctionException(
@@ -146,12 +149,12 @@ public class GenerateKeystore extends BIF {
 			);
 		}
 
-		String keystorePath = eng.getCastUtil().toString( args[0] );
-		String keystorePassword = eng.getCastUtil().toString( args[1] );
-		String alias = eng.getCastUtil().toString( args[2] );
-		String algorithm = args.length > 3 && args[3] != null ? eng.getCastUtil().toString( args[3] ) : null;
-		String subject = args.length > 4 && args[4] != null ? eng.getCastUtil().toString( args[4] ) : null;
-		Struct options = args.length > 5 && args[5] != null ? eng.getCastUtil().toStruct( args[5] ) : null;
+		String keystorePath = cast.toString( args[0] );
+		String keystorePassword = cast.toString( args[1] );
+		String alias = cast.toString( args[2] );
+		String algorithm = args.length > 3 && args[3] != null ? cast.toString( args[3] ) : null;
+		String subject = args.length > 4 && args[4] != null ? cast.toString( args[4] ) : null;
+		Struct options = args.length > 5 && args[5] != null ? cast.toStruct( args[5] ) : null;
 
 		call( pc, keystorePath, keystorePassword, alias, algorithm, subject, options );
 		return null;

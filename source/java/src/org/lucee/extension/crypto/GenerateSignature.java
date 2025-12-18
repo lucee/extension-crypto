@@ -11,6 +11,7 @@ import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
 import lucee.runtime.exp.PageException;
 import lucee.runtime.ext.function.BIF;
+import lucee.runtime.util.Cast;
 
 /**
  * Creates a digital signature using a private key.
@@ -65,6 +66,7 @@ public class GenerateSignature extends BIF {
 	@Override
 	public Object invoke( PageContext pc, Object[] args ) throws PageException {
 		CFMLEngine eng = CFMLEngineFactory.getInstance();
+		Cast cast = eng.getCastUtil();
 
 		if ( args.length < 2 ) {
 			throw eng.getExceptionUtil().createFunctionException(
@@ -75,7 +77,7 @@ public class GenerateSignature extends BIF {
 
 		Object data = args[0];
 		Object privateKey = args[1];
-		String algorithm = args.length > 2 && args[2] != null ? eng.getCastUtil().toString( args[2] ) : null;
+		String algorithm = args.length > 2 && args[2] != null ? cast.toString( args[2] ) : null;
 
 		return call( pc, data, privateKey, algorithm );
 	}
