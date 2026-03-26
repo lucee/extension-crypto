@@ -414,11 +414,217 @@
 		</return>
 	</function>
 
-	<!-- GenerateArgon2Hash -->
+	<!-- ==================== -->
+	<!-- Password Hashing     -->
+	<!-- ==================== -->
+
+	<!-- Argon2Hash (preferred — OWASP defaults) -->
+	<function>
+		<name>Argon2Hash</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.Argon2Hash</class>
+		<description>Generates an Argon2 password hash with OWASP-recommended defaults (argon2id, 19 MB memory, 2 iterations). Use this instead of the deprecated GenerateArgon2Hash().</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to hash</description>
+		</argument>
+		<argument>
+			<name>variant</name>
+			<type>string</type>
+			<required>No</required>
+			<default>argon2id</default>
+			<description>Argon2 variant: argon2i, argon2d, or argon2id</description>
+		</argument>
+		<argument>
+			<name>parallelismFactor</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>1</default>
+			<description>Parallelism factor (1-10)</description>
+		</argument>
+		<argument>
+			<name>memoryCost</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>19456</default>
+			<description>Memory cost in KB (8-100000). OWASP recommends 19456 (19 MB).</description>
+		</argument>
+		<argument>
+			<name>iterations</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>2</default>
+			<description>Number of iterations (1-20)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Argon2 hash string in PHC format</description>
+		</return>
+	</function>
+
+	<!-- Argon2Verify (preferred) -->
+	<function>
+		<name>Argon2Verify</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.Argon2Verify</class>
+		<description>Verifies a password against an Argon2 hash. Use this instead of the deprecated Argon2CheckHash() / VerifyArgon2Hash().</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to verify</description>
+		</argument>
+		<argument>
+			<name>hash</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Argon2 hash to check against</description>
+		</argument>
+		<argument>
+			<name>throwOnError</name>
+			<type>boolean</type>
+			<required>No</required>
+			<default>false</default>
+			<description>If true, throws an exception on invalid hash format instead of returning false</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if password matches hash</description>
+		</return>
+	</function>
+
+	<!-- BCryptHash (preferred) -->
+	<function>
+		<name>BCryptHash</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.BCryptHash</class>
+		<description>Generates a BCrypt password hash. Use this instead of the deprecated GenerateBCryptHash().</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to hash</description>
+		</argument>
+		<argument>
+			<name>cost</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>10</default>
+			<description>Cost factor (4-31)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>BCrypt hash string</description>
+		</return>
+	</function>
+
+	<!-- BCryptVerify (preferred) -->
+	<function>
+		<name>BCryptVerify</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.BCryptVerify</class>
+		<description>Verifies a password against a BCrypt hash. Use this instead of the deprecated VerifyBCryptHash().</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to verify</description>
+		</argument>
+		<argument>
+			<name>hash</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>BCrypt hash to check against</description>
+		</argument>
+		<argument>
+			<name>throwOnError</name>
+			<type>boolean</type>
+			<required>No</required>
+			<default>false</default>
+			<description>If true, throws an exception on invalid hash format instead of returning false</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if password matches hash</description>
+		</return>
+	</function>
+
+	<!-- SCryptHash (preferred) -->
+	<function>
+		<name>SCryptHash</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.SCryptHash</class>
+		<description>Generates an SCrypt password hash. Use this instead of the deprecated GenerateSCryptHash().</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to hash</description>
+		</argument>
+		<argument>
+			<name>costParameter</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>16384</default>
+			<description>CPU/memory cost (N) - must be power of 2</description>
+		</argument>
+		<argument>
+			<name>blockSize</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>8</default>
+			<description>Block size (r)</description>
+		</argument>
+		<argument>
+			<name>parallelization</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>1</default>
+			<description>Parallelization factor (p)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>SCrypt hash string</description>
+		</return>
+	</function>
+
+	<!-- SCryptVerify (preferred) -->
+	<function>
+		<name>SCryptVerify</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.SCryptVerify</class>
+		<description>Verifies a password against an SCrypt hash. Use this instead of the deprecated VerifySCryptHash().</description>
+		<argument>
+			<name>input</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Password to verify</description>
+		</argument>
+		<argument>
+			<name>hash</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>SCrypt hash to check against</description>
+		</argument>
+		<argument>
+			<name>throwOnError</name>
+			<type>boolean</type>
+			<required>No</required>
+			<default>false</default>
+			<description>If true, throws an exception on invalid hash format instead of returning false</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if password matches hash</description>
+		</return>
+	</function>
+
+	<!-- ================================ -->
+	<!-- Deprecated password hash aliases  -->
+	<!-- ================================ -->
+
+	<!-- GenerateArgon2Hash (deprecated — use Argon2Hash) -->
 	<function>
 		<name>GenerateArgon2Hash</name>
 		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.GenerateArgon2Hash</class>
-		<description>Generates an Argon2 password hash. Defaults match extension-argon2 for compat. For production use, consider argon2id with higher memoryCost (e.g. 19456+ KB) per OWASP recommendations.</description>
+		<status>deprecated</status>
+		<description>Deprecated: use Argon2Hash() which defaults to OWASP-recommended settings (argon2id, 19 MB memory, 2 iterations). This function retains the weak extension-argon2 defaults (argon2i, 8 KB memory, 1 iteration) for backwards compatibility only.</description>
 		<argument>
 			<name>input</name>
 			<type>string</type>
@@ -459,11 +665,12 @@
 		</return>
 	</function>
 
-	<!-- Argon2CheckHash -->
+	<!-- Argon2CheckHash (deprecated — use Argon2Verify) -->
 	<function>
 		<name>Argon2CheckHash</name>
 		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.Argon2CheckHash</class>
-		<description>Verifies a password against an Argon2 hash.</description>
+		<status>deprecated</status>
+		<description>Deprecated: renamed to Argon2Verify() for consistency with the {Algorithm}Hash/{Algorithm}Verify naming pattern. Functionally identical.</description>
 		<argument>
 			<name>input</name>
 			<type>string</type>
@@ -489,11 +696,12 @@
 		</return>
 	</function>
 
-	<!-- VerifyArgon2Hash (alias for Argon2CheckHash) -->
+	<!-- VerifyArgon2Hash (deprecated — use Argon2Verify) -->
 	<function>
 		<name>VerifyArgon2Hash</name>
 		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.Argon2CheckHash</class>
-		<description>Verifies a password against an Argon2 hash (alias for Argon2CheckHash).</description>
+		<status>deprecated</status>
+		<description>Deprecated: renamed to Argon2Verify() for consistency with the {Algorithm}Hash/{Algorithm}Verify naming pattern. Functionally identical. Originally from extension-argon2.</description>
 		<argument>
 			<name>input</name>
 			<type>string</type>
@@ -519,11 +727,12 @@
 		</return>
 	</function>
 
-	<!-- GenerateBCryptHash -->
+	<!-- GenerateBCryptHash (deprecated — use BCryptHash) -->
 	<function>
 		<name>GenerateBCryptHash</name>
 		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.GenerateBCryptHash</class>
-		<description>Generates a BCrypt password hash (ACF compatible).</description>
+		<status>deprecated</status>
+		<description>Deprecated: renamed to BCryptHash() for consistency with the {Algorithm}Hash/{Algorithm}Verify naming pattern. Same defaults (cost=10), functionally identical.</description>
 		<argument>
 			<name>input</name>
 			<type>string</type>
@@ -543,11 +752,12 @@
 		</return>
 	</function>
 
-	<!-- VerifyBCryptHash -->
+	<!-- VerifyBCryptHash (deprecated — use BCryptVerify) -->
 	<function>
 		<name>VerifyBCryptHash</name>
 		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.VerifyBCryptHash</class>
-		<description>Verifies a password against a BCrypt hash (ACF compatible).</description>
+		<status>deprecated</status>
+		<description>Deprecated: renamed to BCryptVerify() for consistency with the {Algorithm}Hash/{Algorithm}Verify naming pattern. Functionally identical.</description>
 		<argument>
 			<name>input</name>
 			<type>string</type>
@@ -573,11 +783,12 @@
 		</return>
 	</function>
 
-	<!-- GenerateSCryptHash -->
+	<!-- GenerateSCryptHash (deprecated — use SCryptHash) -->
 	<function>
 		<name>GenerateSCryptHash</name>
 		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.GenerateSCryptHash</class>
-		<description>Generates an SCrypt password hash (ACF compatible).</description>
+		<status>deprecated</status>
+		<description>Deprecated: renamed to SCryptHash() for consistency with the {Algorithm}Hash/{Algorithm}Verify naming pattern. Same defaults (N=16384, r=8, p=1), functionally identical.</description>
 		<argument>
 			<name>input</name>
 			<type>string</type>
@@ -611,11 +822,12 @@
 		</return>
 	</function>
 
-	<!-- VerifySCryptHash -->
+	<!-- VerifySCryptHash (deprecated — use SCryptVerify) -->
 	<function>
 		<name>VerifySCryptHash</name>
 		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.VerifySCryptHash</class>
-		<description>Verifies a password against an SCrypt hash (ACF compatible).</description>
+		<status>deprecated</status>
+		<description>Deprecated: renamed to SCryptVerify() for consistency with the {Algorithm}Hash/{Algorithm}Verify naming pattern. Functionally identical.</description>
 		<argument>
 			<name>input</name>
 			<type>string</type>
@@ -731,6 +943,156 @@
 		<return>
 			<type>string</type>
 			<description>Hex-encoded hash</description>
+		</return>
+	</function>
+
+	<!-- ==================== -->
+	<!-- TOTP / HOTP (2FA)    -->
+	<!-- ==================== -->
+
+	<!-- TOTPSecret -->
+	<function>
+		<name>TOTPSecret</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.TOTPSecret</class>
+		<description>Generates a random TOTP/HOTP secret, returned as a Base32-encoded string suitable for use with authenticator apps.</description>
+		<argument>
+			<name>length</name>
+			<type>numeric</type>
+			<required>No</required>
+			<default>20</default>
+			<description>Secret length in bytes (16-128). Default 20 bytes (160-bit) for SHA1. Use 32 for SHA256 or 64 for SHA512.</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>Base32-encoded secret</description>
+		</return>
+	</function>
+
+	<!-- TOTPGenerateUri -->
+	<function>
+		<name>TOTPGenerateUri</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.TOTPGenerateUri</class>
+		<description>Generates an otpauth:// URI for TOTP, suitable for QR code generation with authenticator apps.</description>
+		<argument>
+			<name>secret</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Base32-encoded secret (from TOTPSecret)</description>
+		</argument>
+		<argument>
+			<name>account</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Account identifier, typically an email address</description>
+		</argument>
+		<argument>
+			<name>issuer</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Issuer name, typically the application or service name</description>
+		</argument>
+		<argument>
+			<name>options</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Optional struct: digits (default 6), period (default 30), algorithm (SHA1|SHA256|SHA512, default SHA1)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>otpauth:// URI string</description>
+		</return>
+	</function>
+
+	<!-- TOTPVerify -->
+	<function>
+		<name>TOTPVerify</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.TOTPVerify</class>
+		<description>Verifies a TOTP code against a shared secret (RFC 6238). Supports configurable time window for clock skew tolerance.</description>
+		<argument>
+			<name>secret</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Base32-encoded secret</description>
+		</argument>
+		<argument>
+			<name>code</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>The TOTP code to verify (typically 6 digits)</description>
+		</argument>
+		<argument>
+			<name>options</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Optional struct: window (default 1), digits (default 6), period (default 30), algorithm (SHA1|SHA256|SHA512, default SHA1)</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if code is valid</description>
+		</return>
+	</function>
+
+	<!-- HOTPGenerate -->
+	<function>
+		<name>HOTPGenerate</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.HOTPGenerate</class>
+		<description>Generates an HOTP code for a given secret and counter (RFC 4226).</description>
+		<argument>
+			<name>secret</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Base32-encoded secret</description>
+		</argument>
+		<argument>
+			<name>counter</name>
+			<type>numeric</type>
+			<required>Yes</required>
+			<description>Counter value</description>
+		</argument>
+		<argument>
+			<name>options</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Optional struct: digits (default 6), algorithm (SHA1|SHA256|SHA512, default SHA1)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>HOTP code string (zero-padded to digit length)</description>
+		</return>
+	</function>
+
+	<!-- HOTPVerify -->
+	<function>
+		<name>HOTPVerify</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.HOTPVerify</class>
+		<description>Verifies an HOTP code against a secret and counter (RFC 4226). Optional window for counter desync tolerance.</description>
+		<argument>
+			<name>secret</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>Base32-encoded secret</description>
+		</argument>
+		<argument>
+			<name>code</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>The HOTP code to verify</description>
+		</argument>
+		<argument>
+			<name>counter</name>
+			<type>numeric</type>
+			<required>Yes</required>
+			<description>Expected counter value</description>
+		</argument>
+		<argument>
+			<name>options</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Optional struct: window (default 0 — exact match), digits (default 6), algorithm (SHA1|SHA256|SHA512, default SHA1)</description>
+		</argument>
+		<return>
+			<type>boolean</type>
+			<description>True if code is valid</description>
 		</return>
 	</function>
 
@@ -1002,6 +1364,94 @@
 		<return>
 			<type>struct</type>
 			<description>Struct with 'header' (alg, typ, kid, etc.), 'payload' (claims), and 'signature' (Base64URL string).</description>
+		</return>
+	</function>
+
+	<!-- ==================== -->
+	<!-- CSR Generation        -->
+	<!-- ==================== -->
+
+	<!-- GenerateCSR -->
+	<function>
+		<name>GenerateCSR</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.GenerateCSR</class>
+		<description>Generates a PKCS#10 Certificate Signing Request (CSR). Returns a PEM-encoded CSR for submission to a Certificate Authority.</description>
+		<argument>
+			<name>keyPair</name>
+			<type>struct</type>
+			<required>Yes</required>
+			<description>Key pair struct from GenerateKeyPair() with 'private' and 'public' keys. The public key is embedded in the CSR, the private key signs it.</description>
+		</argument>
+		<argument>
+			<name>subject</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>X.500 distinguished name (e.g. "CN=example.com,O=My Org,C=AU")</description>
+		</argument>
+		<argument>
+			<name>options</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Optional struct: sans (array of DNS names for Subject Alternative Names), algorithm (signature algorithm, auto-detected from key type if omitted)</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>PEM-encoded PKCS#10 CSR</description>
+		</return>
+	</function>
+
+	<!-- ==================== -->
+	<!-- JWK / JWKS           -->
+	<!-- ==================== -->
+
+	<!-- KeyToJwk -->
+	<function>
+		<name>KeyToJwk</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.KeyToJwk</class>
+		<description>Converts a Java key object, PEM string, or key pair struct to a JWK (JSON Web Key) struct. Supports RSA, EC, Ed25519, and symmetric keys.</description>
+		<argument>
+			<name>key</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Key to convert: PublicKey, PrivateKey, SecretKey, PEM string, or key pair struct from GenerateKeyPair()</description>
+		</argument>
+		<return>
+			<type>struct</type>
+			<description>JWK struct with kty, and algorithm-specific fields (n, e for RSA; x, y for EC; etc.)</description>
+		</return>
+	</function>
+
+	<!-- JwkToKey -->
+	<function>
+		<name>JwkToKey</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.JwkToKey</class>
+		<description>Converts a JWK (JSON Web Key) struct or JSON string to a Java key object. Returns PublicKey, PrivateKey, or SecretKey depending on the JWK contents.</description>
+		<argument>
+			<name>jwk</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>JWK as a struct or JSON string</description>
+		</argument>
+		<return>
+			<type>any</type>
+			<description>Java key object (PublicKey, PrivateKey, or SecretKey)</description>
+		</return>
+	</function>
+
+	<!-- JwksLoad -->
+	<function>
+		<name>JwksLoad</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.JwksLoad</class>
+		<description>Loads a JWKS (JSON Web Key Set) from a URL or JSON string. Returns an array of JWK structs, each suitable for passing to JwkToKey().</description>
+		<argument>
+			<name>source</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>JWKS URL (https://...) or raw JSON string containing a keys array</description>
+		</argument>
+		<return>
+			<type>array</type>
+			<description>Array of JWK structs</description>
 		</return>
 	</function>
 

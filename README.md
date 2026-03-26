@@ -2,9 +2,9 @@
 
 [![Java CI](https://github.com/lucee/extension-crypto/actions/workflows/main.yml/badge.svg)](https://github.com/lucee/extension-crypto/actions/workflows/main.yml)
 
-This extension provides modern cryptographic functions for Lucee, powered by [BouncyCastle](https://www.bouncycastle.org/download/bouncy-castle-java/). It includes key pair generation, digital signatures, password hashing, certificate management, and key derivation functions.
+Modern cryptographic functions for Lucee, powered by [BouncyCastle](https://www.bouncycastle.org/download/bouncy-castle-java/) and [Nimbus JOSE+JWT](https://connect2id.com/products/nimbus-jose-jwt).
 
-It also includes JWT functionality using [Nimbus JOSE + JWT](https://connect2id.com/products/nimbus-jose-jwt) as it also requires Bouncy Castle.
+**Requires Lucee 7.0.3+** — uses maven-based classloading (no OSGi).
 
 ## Key Pair Generation
 
@@ -39,11 +39,14 @@ isValid = ValidateKeyPair( keys.private, keys.public );
 ### Key Conversion
 
 ```cfml
-// Convert PEM to Java key object
+// PEM <-> Java key objects
 privateKey = PemToKey( pemString );
-
-// Convert Java key to PEM
 pemString = KeyToPem( javaKeyObject );
+
+// JWK <-> Java key objects
+jwk = KeyToJwk( keys );              // key pair struct, PEM string, or Java key
+jwk = KeyToJwk( keys.public );       // public-only JWK (no private material)
+key = JwkToKey( jwk );               // JWK struct or JSON string -> Java key
 ```
 
 ## Digital Signatures
@@ -161,10 +164,34 @@ writeOutput( parts.payload.sub );     // "user123"
 writeOutput( parts.signature );       // base64url signature
 ```
 
+### JWK / JWKS Support
+
+Work with JSON Web Keys for OAuth2, OpenID Connect, and key distribution.
+
+```cfml
+// Convert a key pair to JWK
+keys = GenerateKeyPair( "RSA" );
+jwk = KeyToJwk( keys.public );       // public-only JWK for distribution
+jwk = KeyToJwk( keys );              // includes private key material
+
+// Convert JWK back to Java key
+pubKey = JwkToKey( jwk );
+pubKey = JwkToKey( jsonString );      // also accepts JSON strings
+
+// Load JWKS from a provider (e.g. OAuth2 / OpenID Connect)
+keys = JwksLoad( "https://accounts.google.com/.well-known/jwks.json" );
+keys = JwksLoad( jwksJsonString );    // or from a JSON string
+
+// Full JWT verification workflow with JWKS
+keys = JwksLoad( "https://provider.com/.well-known/jwks.json" );
+pubKey = JwkToKey( keys[ 1 ] );
+claims = JwtVerify( token, pubKey );
+```
+
 ### Supported JWT Algorithms
 
 | Algorithm | Type | Description |
-|-----------|------|-------------|
+| --------- | ---- | ----------- |
 | `HS256`, `HS384`, `HS512` | HMAC | Symmetric, shared secret |
 | `RS256`, `RS384`, `RS512` | RSA | Asymmetric, RSA keys |
 | `ES256`, `ES384`, `ES512` | ECDSA | Asymmetric, EC keys (P-256/384/521) |
@@ -175,48 +202,50 @@ writeOutput( parts.signature );       // base64url signature
 
 Secure password hashing with Argon2, BCrypt, and SCrypt.
 
+The old function names (`GenerateArgon2Hash`, `Argon2CheckHash`, `VerifyArgon2Hash`, `GenerateBCryptHash`, `VerifyBCryptHash`, `GenerateSCryptHash`, `VerifySCryptHash`) still work but are deprecated. The new names follow a consistent `{Algorithm}Hash()` / `{Algorithm}Verify()` pattern, and `Argon2Hash()` upgrades to OWASP-recommended defaults (argon2id, 19 MB memory) — the old `GenerateArgon2Hash()` keeps the weak extension-argon2 defaults for backwards compat.
+
 ### Argon2 (recommended for new applications)
 
+`Argon2Hash()` uses OWASP-recommended defaults (argon2id, 19 MB memory, 2 iterations).
+
 ```cfml
-// Hash a password
-hash = GenerateArgon2Hash( "mypassword" );
+// Hash a password (OWASP defaults)
+hash = Argon2Hash( "mypassword" );
 
 // With custom parameters
-hash = GenerateArgon2Hash(
+hash = Argon2Hash(
     input = "mypassword",
     variant = "argon2id",      // argon2i, argon2d, or argon2id
-    parallelismFactor = 2,
-    memoryCost = 65536,        // KB
-    iterations = 3
+    parallelismFactor = 1,
+    memoryCost = 19456,        // KB (~19 MB)
+    iterations = 2
 );
 
 // Verify password
-isValid = Argon2CheckHash( "mypassword", hash );
-// or
-isValid = VerifyArgon2Hash( "mypassword", hash );
+isValid = Argon2Verify( "mypassword", hash );
 ```
 
 ### BCrypt
 
 ```cfml
 // Hash with default cost (10)
-hash = GenerateBCryptHash( "mypassword" );
+hash = BCryptHash( "mypassword" );
 
 // With custom cost
-hash = GenerateBCryptHash( "mypassword", 12 );
+hash = BCryptHash( "mypassword", 12 );
 
 // Verify
-isValid = VerifyBCryptHash( "mypassword", hash );
+isValid = BCryptVerify( "mypassword", hash );
 ```
 
 ### SCrypt
 
 ```cfml
 // Hash with defaults
-hash = GenerateSCryptHash( "mypassword" );
+hash = SCryptHash( "mypassword" );
 
 // With custom parameters
-hash = GenerateSCryptHash(
+hash = SCryptHash(
     input = "mypassword",
     costParameter = 16384,     // N (must be power of 2)
     blockSize = 8,             // r
@@ -224,7 +253,47 @@ hash = GenerateSCryptHash(
 );
 
 // Verify
-isValid = VerifySCryptHash( "mypassword", hash );
+isValid = SCryptVerify( "mypassword", hash );
+```
+
+## TOTP / HOTP (Two-Factor Authentication)
+
+Time-based (RFC 6238) and counter-based (RFC 4226) one-time passwords for 2FA.
+
+### TOTP (Time-Based)
+
+```cfml
+// Generate a secret for the user
+secret = TOTPSecret();
+
+// Generate an otpauth:// URI for QR codes (scan with authenticator app)
+uri = TOTPGenerateUri( secret, "user@example.com", "MyApp" );
+
+// With custom options
+uri = TOTPGenerateUri( secret, "user@example.com", "MyApp", {
+    digits: 6,
+    period: 30,
+    algorithm: "SHA1"
+});
+
+// Verify a code entered by the user
+isValid = TOTPVerify( secret, userCode );
+
+// With custom window (clock skew tolerance)
+isValid = TOTPVerify( secret, userCode, { window: 2 } );
+```
+
+### HOTP (Counter-Based)
+
+```cfml
+// Generate a code for a given counter
+code = HOTPGenerate( secret, counter );
+
+// Verify a code
+isValid = HOTPVerify( secret, userCode, counter );
+
+// With look-ahead window for counter desync
+isValid = HOTPVerify( secret, userCode, counter, { window: 5 } );
 ```
 
 ## Certificates
@@ -249,6 +318,15 @@ writeOutput( info.validTo );
 // Convert between PEM and Java objects
 certObj = PemToCertificate( pemString );
 pemString = CertificateToPem( certObj );
+
+// Generate a CSR for submission to a Certificate Authority
+keys = GenerateKeyPair( "RSA-2048" );
+csr = GenerateCSR( keys, "CN=example.com, O=My Company, C=AU" );
+
+// With Subject Alternative Names
+csr = GenerateCSR( keys, "CN=example.com", {
+    sans: [ "example.com", "www.example.com", "api.example.com" ]
+});
 ```
 
 ## Keystores
@@ -361,7 +439,7 @@ encrypted = Encrypt( "secret message", binaryEncode( sharedSecret, "base64" ), "
 ### Key Pair Algorithms
 
 | Algorithm | Description |
-|-----------|-------------|
+| --------- | ----------- |
 | `RSA`, `RSA-2048`, `RSA-4096` | RSA with specified key size |
 | `EC`, `P-256`, `P-384`, `P-521` | ECDSA with NIST curves |
 | `Ed25519`, `Ed448` | EdDSA (modern, fast signatures) |
@@ -372,19 +450,24 @@ encrypted = Encrypt( "secret message", binaryEncode( sharedSecret, "base64" ), "
 ### Hash Algorithms for HKDF
 
 | Algorithm | Output Size |
-|-----------|-------------|
+| --------- | ----------- |
 | `SHA256` | 32 bytes |
 | `SHA384` | 48 bytes |
 | `SHA512` | 64 bytes |
 
 ## Requirements
 
-- Lucee 6.x or later
+- Lucee 7.0.3+
 - Java 11 or later
 
 ## Technical Details
 
-This extension uses [BouncyCastle](https://www.bouncycastle.org/) for cryptographic operations.
+This extension uses:
+
+- [BouncyCastle](https://www.bouncycastle.org/) for cryptographic operations
+- [Nimbus JOSE+JWT](https://connect2id.com/products/nimbus-jose-jwt) for JWT and JWK support
+
+Maven-based extension using embedded `/maven/` repo layout with `maven=` attribute in the FLD. No OSGi bundles.
 
 ## Issues
 

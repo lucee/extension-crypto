@@ -1,10 +1,5 @@
 package org.lucee.extension.crypto;
 
-import java.nio.charset.StandardCharsets;
-import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
-import org.lucee.extension.crypto.util.CryptoUtil;
-import org.bouncycastle.crypto.params.Argon2Parameters;
-
 import lucee.loader.engine.CFMLEngine;
 import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
@@ -13,140 +8,22 @@ import lucee.runtime.ext.function.BIF;
 import lucee.runtime.util.Cast;
 
 /**
- * Verifies a password against an Argon2 hash.
- * Also aliased as VerifyArgon2Hash for consistency.
+ * Deprecated: use Argon2Verify() instead.
  *
- * Usage:
- *   isValid = Argon2CheckHash( "password", hash )
- *   isValid = Argon2CheckHash( "password", hash, true )  // throws on invalid hash format
- *   isValid = VerifyArgon2Hash( "password", hash )
+ * Retained for backwards compatibility with extension-argon2.
+ * Also aliased as VerifyArgon2Hash in the FLD.
+ * Delegates all verification to Argon2Verify.verify().
  */
 public class Argon2CheckHash extends BIF {
 
 	private static final long serialVersionUID = 1L;
 
 	public static Object call( PageContext pc, String input, String hash ) throws PageException {
-		return call( pc, input, hash, false );
+		return Argon2Verify.verify( pc, input, hash, false );
 	}
 
 	public static Object call( PageContext pc, String input, String hash, Boolean throwOnError ) throws PageException {
-		boolean shouldThrow = throwOnError != null && throwOnError;
-		try {
-			// Parse the hash string
-			ParsedHash parsed = parseHash( hash );
-			if ( parsed == null ) {
-				if ( shouldThrow ) {
-					throw CFMLEngineFactory.getInstance().getExceptionUtil()
-						.createApplicationException( "Invalid Argon2 hash format" );
-				}
-				return false;
-			}
-
-			// Regenerate hash with same parameters
-			Argon2Parameters.Builder builder = new Argon2Parameters.Builder( parsed.type )
-				.withSalt( parsed.salt )
-				.withParallelism( parsed.parallelism )
-				.withMemoryAsKB( parsed.memory )
-				.withIterations( parsed.iterations )
-				.withVersion( parsed.version );
-
-			Argon2Parameters params = builder.build();
-
-			Argon2BytesGenerator generator = new Argon2BytesGenerator();
-			generator.init( params );
-
-			byte[] testHash = new byte[parsed.hash.length];
-			generator.generateBytes( input.getBytes( StandardCharsets.UTF_8 ), testHash );
-
-			// Constant-time comparison
-			return CryptoUtil.constantTimeEquals( testHash, parsed.hash );
-		}
-		catch ( PageException pe ) {
-			throw pe;
-		}
-		catch ( Exception e ) {
-			if ( shouldThrow ) {
-				throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
-			}
-			return false;
-		}
-	}
-
-	/**
-	 * Parse PHC format hash string.
-	 * Format: $argon2id$v=19$m=65536,t=3,p=1$salt$hash
-	 */
-	private static ParsedHash parseHash( String hash ) {
-		if ( hash == null || !hash.startsWith( "$argon2" ) ) {
-			return null;
-		}
-
-		String[] parts = hash.split( "\\$" );
-		if ( parts.length < 5 ) {
-			return null;
-		}
-
-		ParsedHash result = new ParsedHash();
-
-		// Parse variant (parts[1])
-		switch ( parts[1] ) {
-			case "argon2d":
-				result.type = Argon2Parameters.ARGON2_d;
-				break;
-			case "argon2i":
-				result.type = Argon2Parameters.ARGON2_i;
-				break;
-			case "argon2id":
-				result.type = Argon2Parameters.ARGON2_id;
-				break;
-			default:
-				return null;
-		}
-
-		// Parse version (parts[2]) - v=19
-		if ( parts[2].startsWith( "v=" ) ) {
-			result.version = Integer.parseInt( parts[2].substring( 2 ) );
-		}
-		else {
-			result.version = Argon2Parameters.ARGON2_VERSION_13;
-		}
-
-		// Parse parameters (parts[3]) - m=65536,t=3,p=1
-		String[] params = parts[3].split( "," );
-		for ( String param : params ) {
-			String[] kv = param.split( "=" );
-			if ( kv.length != 2 ) continue;
-
-			switch ( kv[0] ) {
-				case "m":
-					result.memory = Integer.parseInt( kv[1] );
-					break;
-				case "t":
-					result.iterations = Integer.parseInt( kv[1] );
-					break;
-				case "p":
-					result.parallelism = Integer.parseInt( kv[1] );
-					break;
-			}
-		}
-
-		// Parse salt (parts[4])
-		result.salt = CryptoUtil.base64DecodeLenient( parts[4] );
-
-		// Parse hash (parts[5])
-		result.hash = CryptoUtil.base64DecodeLenient( parts[5] );
-
-		return result;
-	}
-
-	private static class ParsedHash {
-		int type;
-		int version;
-		int memory;
-		int iterations;
-		int parallelism;
-		byte[] salt;
-		byte[] hash;
+		return Argon2Verify.verify( pc, input, hash, throwOnError );
 	}
 
 	@Override
@@ -163,6 +40,6 @@ public class Argon2CheckHash extends BIF {
 		String hash = cast.toString( args[1] );
 		Boolean throwOnError = args.length > 2 && args[2] != null ? cast.toBoolean( args[2] ) : false;
 
-		return call( pc, input, hash, throwOnError );
+		return Argon2Verify.verify( pc, input, hash, throwOnError );
 	}
 }

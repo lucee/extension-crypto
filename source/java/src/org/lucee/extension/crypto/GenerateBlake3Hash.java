@@ -98,10 +98,8 @@ public class GenerateBlake3Hash extends BIF {
 			// Return hex encoded
 			return CryptoUtil.bytesToHex( hash );
 		}
-		catch ( PageException pe ) {
-			throw pe;
-		}
 		catch ( Exception e ) {
+			if ( e instanceof PageException ) throw (PageException) e;
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
 	}

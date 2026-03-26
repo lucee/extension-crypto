@@ -336,7 +336,7 @@
 		<dependency>
 			<groupId>org.lucee</groupId>
 			<artifactId>lucee</artifactId>
-			<version>6.2.3.35</version>
+			<version>7.0.2.106</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>

@@ -82,10 +82,8 @@ public class CertificateInfo extends BIF {
 
 			return result;
 		}
-		catch ( PageException pe ) {
-			throw pe;
-		}
 		catch ( Exception e ) {
+			if ( e instanceof PageException ) throw (PageException) e;
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
 	}

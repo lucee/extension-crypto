@@ -1,7 +1,5 @@
 package org.lucee.extension.crypto;
 
-import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
-
 import lucee.loader.engine.CFMLEngine;
 import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.PageContext;
@@ -10,31 +8,21 @@ import lucee.runtime.ext.function.BIF;
 import lucee.runtime.util.Cast;
 
 /**
- * Verifies a password against a BCrypt hash (ACF compatible).
+ * Deprecated: use BCryptVerify() instead.
  *
- * Usage:
- *   isValid = VerifyBCryptHash( "password", hash )
- *   isValid = VerifyBCryptHash( "password", hash, true )  // throws on invalid hash format
+ * Retained for backwards compatibility.
+ * Delegates all verification to BCryptVerify.verify().
  */
 public class VerifyBCryptHash extends BIF {
 
 	private static final long serialVersionUID = 1L;
 
 	public static Object call( PageContext pc, String input, String hash ) throws PageException {
-		return call( pc, input, hash, false );
+		return BCryptVerify.verify( pc, input, hash, false );
 	}
 
 	public static Object call( PageContext pc, String input, String hash, Boolean throwOnError ) throws PageException {
-		boolean shouldThrow = throwOnError != null && throwOnError;
-		try {
-			return OpenBSDBCrypt.checkPassword( hash, input.toCharArray() );
-		}
-		catch ( Exception e ) {
-			if ( shouldThrow ) {
-				throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
-			}
-			return false;
-		}
+		return BCryptVerify.verify( pc, input, hash, throwOnError );
 	}
 
 	@Override
@@ -51,6 +39,6 @@ public class VerifyBCryptHash extends BIF {
 		String hash = cast.toString( args[1] );
 		Boolean throwOnError = args.length > 2 && args[2] != null ? cast.toBoolean( args[2] ) : false;
 
-		return call( pc, input, hash, throwOnError );
+		return BCryptVerify.verify( pc, input, hash, throwOnError );
 	}
 }

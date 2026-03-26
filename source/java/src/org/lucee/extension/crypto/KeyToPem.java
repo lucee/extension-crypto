@@ -65,15 +65,13 @@ public class KeyToPem extends BIF {
 				return CryptoUtil.toPem( pubKey );
 			}
 			catch ( Exception e ) {
-				throw new RuntimeException(
+				throw eng.getExceptionUtil().createApplicationException(
 					"Could not parse Base64 key as private (" + privateKeyError.getMessage() +
-					") or public (" + e.getMessage() + ") key", e );
+					") or public (" + e.getMessage() + ") key" );
 			}
 		}
-		catch ( PageException pe ) {
-			throw pe;
-		}
 		catch ( Exception e ) {
+			if ( e instanceof PageException ) throw (PageException) e;
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
 	}

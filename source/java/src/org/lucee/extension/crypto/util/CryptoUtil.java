@@ -30,6 +30,7 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import lucee.loader.engine.CFMLEngine;
 import lucee.loader.engine.CFMLEngineFactory;
 import lucee.runtime.exp.PageException;
+import lucee.runtime.type.Struct;
 
 /**
  * Utility class for cryptographic operations using BouncyCastle.
@@ -386,6 +387,20 @@ public class CryptoUtil {
 	}
 
 	/**
+	 * Constant-time string comparison to prevent timing attacks.
+	 * Length difference is folded into the result rather than causing an early return.
+	 */
+	public static boolean constantTimeEquals( String a, String b ) {
+		if ( a == null || b == null ) return a == b;
+		int result = a.length() ^ b.length();
+		int len = Math.min( a.length(), b.length() );
+		for ( int i = 0; i < len; i++ ) {
+			result |= a.charAt( i ) ^ b.charAt( i );
+		}
+		return result == 0;
+	}
+
+	/**
 	 * Decode a Base64 string that may or may not have padding.
 	 * Uses MIME decoder which is lenient with padding and whitespace.
 	 */
@@ -426,5 +441,17 @@ public class CryptoUtil {
 		String str = CFMLEngineFactory.getInstance().getCastUtil().toString( obj );
 		if ( str.isEmpty() ) return null;
 		return str.getBytes( StandardCharsets.UTF_8 );
+	}
+
+	/**
+	 * Convert a java.util.Map to a CFML Struct.
+	 * Used by JWK functions to convert Nimbus JSON maps to CFML structs.
+	 */
+	public static Struct mapToStruct( CFMLEngine eng, java.util.Map<String, Object> map ) throws PageException {
+		Struct result = eng.getCreationUtil().createStruct();
+		for ( java.util.Map.Entry<String, Object> entry : map.entrySet() ) {
+			result.setEL( eng.getCastUtil().toKey( entry.getKey() ), entry.getValue() );
+		}
+		return result;
 	}
 }

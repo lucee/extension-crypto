@@ -41,10 +41,8 @@ public class PemToKey extends BIF {
 			throw CFMLEngineFactory.getInstance().getExceptionUtil()
 				.createApplicationException( "PEM does not contain a key. Found: " + result.getClass().getSimpleName() );
 		}
-		catch ( PageException pe ) {
-			throw pe;
-		}
 		catch ( Exception e ) {
+			if ( e instanceof PageException ) throw (PageException) e;
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
 	}

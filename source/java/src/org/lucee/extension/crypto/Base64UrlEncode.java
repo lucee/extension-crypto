@@ -24,10 +24,8 @@ public class Base64UrlEncode extends BIF {
 			byte[] bytes = CryptoUtil.toBytes( data );
 			return CryptoUtil.base64UrlEncode( bytes );
 		}
-		catch ( PageException pe ) {
-			throw pe;
-		}
 		catch ( Exception e ) {
+			if ( e instanceof PageException ) throw (PageException) e;
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
 	}

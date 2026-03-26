@@ -38,10 +38,8 @@ public class CertificateToPem extends BIF {
 
 			return CryptoUtil.toPem( cert );
 		}
-		catch ( PageException pe ) {
-			throw pe;
-		}
 		catch ( Exception e ) {
+			if ( e instanceof PageException ) throw (PageException) e;
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
 	}

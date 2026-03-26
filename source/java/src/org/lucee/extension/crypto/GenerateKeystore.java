@@ -109,10 +109,8 @@ public class GenerateKeystore extends BIF {
 				ks.store( fos, keystorePassword.toCharArray() );
 			}
 		}
-		catch ( PageException pe ) {
-			throw pe;
-		}
 		catch ( Exception e ) {
+			if ( e instanceof PageException ) throw (PageException) e;
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
 	}

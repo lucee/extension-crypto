@@ -18,8 +18,8 @@
 
 	// Now get the full metadata via getFunctionData()
 	md = [ "## Crypto Extension API (#cryptoNames.len()# functions)" & chr( 10 ) ];
-	md.append( "| Function | Returns |" );
-	md.append( "| --- | --- |" );
+	md.append( "| Function | Returns | Status |" );
+	md.append( "| --- | --- | --- |" );
 
 	lastChar = "";
 	for ( fname in cryptoNames ) {
@@ -27,7 +27,7 @@
 		name = fn.nameWithCase ?: fn.name;
 		firstChar = uCase( left( name, 1 ) );
 		if ( len( lastChar ) && firstChar != lastChar )
-			md.append( "| | |" );
+			md.append( "| | | |" );
 		lastChar = firstChar;
 
 		ret = fn.returnType ?: "void";
@@ -38,8 +38,9 @@
 			args.append( argStr );
 		}
 
+		status = ( fn.status ?: "implemented" ) == "deprecated" ? "deprecated" : "";
 		sig = "`#name#( #args.toList( ', ' )# )`";
-		md.append( "| #sig# | #ret# |" );
+		md.append( "| #sig# | #ret# | #status# |" );
 	}
 
 	content = md.toList( chr( 10 ) );
