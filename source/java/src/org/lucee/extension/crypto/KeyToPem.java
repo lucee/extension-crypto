@@ -52,14 +52,22 @@ public class KeyToPem extends BIF {
 			}
 
 			// Try to parse as private key first, then public key
+			Exception privateKeyError = null;
 			try {
 				PrivateKey privKey = CryptoUtil.base64ToPrivateKey( keyStr, algorithm );
 				return CryptoUtil.toPem( privKey );
 			}
 			catch ( Exception e ) {
-				// Try as public key
+				privateKeyError = e;
+			}
+			try {
 				PublicKey pubKey = CryptoUtil.base64ToPublicKey( keyStr, algorithm );
 				return CryptoUtil.toPem( pubKey );
+			}
+			catch ( Exception e ) {
+				throw new RuntimeException(
+					"Could not parse Base64 key as private (" + privateKeyError.getMessage() +
+					") or public (" + e.getMessage() + ") key", e );
 			}
 		}
 		catch ( PageException pe ) {

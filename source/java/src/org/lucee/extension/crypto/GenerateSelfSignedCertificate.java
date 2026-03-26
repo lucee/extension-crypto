@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
@@ -82,7 +83,9 @@ public class GenerateSelfSignedCertificate extends BIF {
 
 			// Build certificate
 			X500Name x500Name = new X500Name( subject );
-			BigInteger serial = BigInteger.valueOf( System.currentTimeMillis() );
+			byte[] serialBytes = new byte[16];
+			new SecureRandom().nextBytes( serialBytes );
+			BigInteger serial = new BigInteger( 1, serialBytes );
 			Date notBefore = new Date();
 			Date notAfter = new Date( notBefore.getTime() + ( days * 86400000L ) );
 

@@ -26,6 +26,21 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 
 		});
 
+		describe( "VerifyBCryptHash throwOnError", function() {
+
+			it( "returns false for invalid hash by default", function() {
+				var result = VerifyBCryptHash( "password", "not-a-hash" );
+				expect( result ).toBeFalse();
+			});
+
+			it( "throws on invalid hash when throwOnError is true", function() {
+				expect( function() {
+					VerifyBCryptHash( "password", "not-a-hash", true );
+				}).toThrow();
+			});
+
+		});
+
 		describe( "VerifyBCryptHash", function() {
 
 			it( "verifies correct password", function() {

@@ -4,6 +4,6 @@ version: "${project.version}"
 id: "${extensionId}"
 name: "${label}"
 description: "${description}"
-start-bundles: true
+start-bundles: false
 release-type: ${releaseType}
 lucee-core-version: "${luceeCoreVersion}"

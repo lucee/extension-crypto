@@ -52,6 +52,25 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 
 		});
 
+		describe( "Certificate serial number uniqueness", function() {
+
+			it( "generates unique serial numbers for consecutive certs", function() {
+				var keyPair = GenerateKeyPair( "RSA-2048" );
+				var serials = {};
+				// generate several certs rapidly to catch timestamp collisions
+				loop times=5 {
+					var cert = GenerateSelfSignedCertificate(
+						keyPair = keyPair,
+						subject = "CN=test"
+					);
+					var info = CertificateInfo( cert );
+					serials[ info.serialNumber ] = true;
+				}
+				expect( structCount( serials ) ).toBe( 5 );
+			});
+
+		});
+
 		describe( "CertificateInfo", function() {
 
 			it( "extracts certificate information", function() {

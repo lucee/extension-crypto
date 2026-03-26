@@ -2,6 +2,7 @@ name: Java CI
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -12,27 +13,29 @@ on:
       luceeVersions:
         description: 'JSON array of Lucee versions to test'
         required: false
-        default: '["6.2/stable/light", "7.0/stable/light"]'
+        default: '[ "7.0/snapshot/light", "7.1/snapshot/light"]'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       version: ${{ steps.extract-version.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '11'
           distribution: 'temurin'
 
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
-          path: ~/.m2
-          key: maven
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('pom.xml') }}
+          restore-keys: maven-
 
       - name: Extract version number
         id: extract-version
@@ -49,30 +52,26 @@ jobs:
           name: crypto-lex
           path: target/*.lex
 
-      - name: Cache Lucee files
-        uses: actions/cache@v4
-        with:
-          path: ~/work/_actions/lucee/script-runner/main/lucee-download-cache
-          key: lucee-downloads
-
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: build
     strategy:
       fail-fast: false
       matrix:
         lucee: ${{ fromJSON(inputs.luceeVersions || '["6.2/stable/light", "7.0/stable/light"]') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
-          path: ~/.m2
-          key: maven
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('pom.xml') }}
+          restore-keys: maven-
 
       - name: Cache Lucee files
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/work/_actions/lucee/script-runner/main/lucee-download-cache
           key: lucee-downloads
@@ -84,7 +83,7 @@ jobs:
           path: target
 
       - name: Checkout Lucee
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: lucee/lucee
           path: lucee
@@ -103,22 +102,24 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [build, test]
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy && needs.test.result == 'success'
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '11'
 
       - name: Cache Maven packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
-          path: ~/.m2
-          key: maven
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('pom.xml') }}
+          restore-keys: maven-
 
       - name: Import GPG key
         run: |
@@ -128,14 +129,16 @@ jobs:
 
       - name: Build and Deploy with Maven
         env:
+          VERSION: ${{ needs.build.outputs.version }}
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          if [[ "${{ needs.build.outputs.version }}" == *-SNAPSHOT ]]; then
+          if [[ "$VERSION" == *-SNAPSHOT ]]; then
             echo "------- Maven Deploy snapshot -------";
             mvn -B -e clean deploy --settings maven-settings.xml
-          elif [[ "${{ needs.build.outputs.version }}" == *-ALPHA ]]; then
+          elif [[ "$VERSION" == *-ALPHA ]]; then
+            # ALPHA builds are installed locally only, not published
             echo "------- Maven Install alpha -------";
             mvn -B -e clean install --settings maven-settings.xml
           else

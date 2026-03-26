@@ -3,6 +3,7 @@ package org.lucee.extension.crypto;
 import java.nio.charset.StandardCharsets;
 
 import org.bouncycastle.crypto.digests.Blake3Digest;
+import org.lucee.extension.crypto.util.CryptoUtil;
 import org.bouncycastle.crypto.params.Blake3Parameters;
 
 import lucee.loader.engine.CFMLEngine;
@@ -78,8 +79,9 @@ public class GenerateBlake3Hash extends BIF {
 				}
 			}
 
-			// Create digest based on mode
-			Blake3Digest digest = new Blake3Digest( outLen * 8 );  // constructor takes bits
+			// Create digest - Blake3 is an XOF, so we use fixed 256-bit digest
+			// and doOutput for variable length output
+			Blake3Digest digest = new Blake3Digest( 256 );
 			if ( context != null && !context.isEmpty() ) {
 				// Key derivation mode
 				digest.init( Blake3Parameters.context( context.getBytes( StandardCharsets.UTF_8 ) ) );
@@ -91,10 +93,10 @@ public class GenerateBlake3Hash extends BIF {
 			// Hash
 			digest.update( inputBytes, 0, inputBytes.length );
 			byte[] hash = new byte[outLen];
-			digest.doFinal( hash, 0 );
+			digest.doOutput( hash, 0, outLen );
 
 			// Return hex encoded
-			return bytesToHex( hash );
+			return CryptoUtil.bytesToHex( hash );
 		}
 		catch ( PageException pe ) {
 			throw pe;
@@ -102,14 +104,6 @@ public class GenerateBlake3Hash extends BIF {
 		catch ( Exception e ) {
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
-	}
-
-	private static String bytesToHex( byte[] bytes ) {
-		StringBuilder sb = new StringBuilder( bytes.length * 2 );
-		for ( byte b : bytes ) {
-			sb.append( String.format( "%02x", b ) );
-		}
-		return sb.toString();
 	}
 
 	@Override

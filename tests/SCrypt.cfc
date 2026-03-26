@@ -35,6 +35,21 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 
 		});
 
+		describe( "VerifySCryptHash throwOnError", function() {
+
+			it( "returns false for invalid hash by default", function() {
+				var result = VerifySCryptHash( "password", "not-a-hash" );
+				expect( result ).toBeFalse();
+			});
+
+			it( "throws on invalid hash when throwOnError is true", function() {
+				expect( function() {
+					VerifySCryptHash( "password", "not-a-hash", true );
+				}).toThrow();
+			});
+
+		});
+
 		describe( "VerifySCryptHash", function() {
 
 			it( "verifies correct password", function() {

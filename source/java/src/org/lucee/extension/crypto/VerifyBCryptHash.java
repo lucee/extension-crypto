@@ -14,17 +14,25 @@ import lucee.runtime.util.Cast;
  *
  * Usage:
  *   isValid = VerifyBCryptHash( "password", hash )
+ *   isValid = VerifyBCryptHash( "password", hash, true )  // throws on invalid hash format
  */
 public class VerifyBCryptHash extends BIF {
 
 	private static final long serialVersionUID = 1L;
 
-	public static Boolean call( PageContext pc, String input, String hash ) throws PageException {
+	public static Object call( PageContext pc, String input, String hash ) throws PageException {
+		return call( pc, input, hash, false );
+	}
+
+	public static Object call( PageContext pc, String input, String hash, Boolean throwOnError ) throws PageException {
+		boolean shouldThrow = throwOnError != null && throwOnError;
 		try {
 			return OpenBSDBCrypt.checkPassword( hash, input.toCharArray() );
 		}
 		catch ( Exception e ) {
-			// Invalid hash format or other error
+			if ( shouldThrow ) {
+				throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
+			}
 			return false;
 		}
 	}
@@ -41,7 +49,8 @@ public class VerifyBCryptHash extends BIF {
 
 		String input = cast.toString( args[0] );
 		String hash = cast.toString( args[1] );
+		Boolean throwOnError = args.length > 2 && args[2] != null ? cast.toBoolean( args[2] ) : false;
 
-		return call( pc, input, hash );
+		return call( pc, input, hash, throwOnError );
 	}
 }

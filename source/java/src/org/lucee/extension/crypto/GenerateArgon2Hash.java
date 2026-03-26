@@ -31,11 +31,11 @@ public class GenerateArgon2Hash extends BIF {
 	private static final int HASH_LENGTH = 32;
 	private static final int SALT_LENGTH = 16;
 
-	// Secure defaults per OWASP recommendations
-	private static final String DEFAULT_VARIANT = "argon2id";
-	private static final int DEFAULT_PARALLELISM = 4;
-	private static final int DEFAULT_MEMORY = 65536; // 64 MB
-	private static final int DEFAULT_ITERATIONS = 3;
+	// Defaults match extension-argon2 for backwards compatibility
+	private static final String DEFAULT_VARIANT = "argon2i";
+	private static final int DEFAULT_PARALLELISM = 1;
+	private static final int DEFAULT_MEMORY = 8;
+	private static final int DEFAULT_ITERATIONS = 1;
 
 	public static String call( PageContext pc, String input ) throws PageException {
 		return call( pc, input, DEFAULT_VARIANT, DEFAULT_PARALLELISM, DEFAULT_MEMORY, DEFAULT_ITERATIONS );
@@ -58,9 +58,9 @@ public class GenerateArgon2Hash extends BIF {
 		try {
 			// Parse parameters
 			int type = parseVariant( variant );
-			int parallelism = parallelismFactor != null ? parallelismFactor.intValue() : 1;
-			int memory = memoryCost != null ? memoryCost.intValue() : 8;
-			int iters = iterations != null ? iterations.intValue() : 8;
+			int parallelism = parallelismFactor != null ? parallelismFactor.intValue() : DEFAULT_PARALLELISM;
+			int memory = memoryCost != null ? memoryCost.intValue() : DEFAULT_MEMORY;
+			int iters = iterations != null ? iterations.intValue() : DEFAULT_ITERATIONS;
 
 			// Validate parameters
 			if ( parallelism < 1 || parallelism > 10 ) {

@@ -139,6 +139,33 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 
 		});
 
+		describe( "GetKeyPairFromKeystore optional keypairPassword", function() {
+
+			it( "defaults keypairPassword to keystorePassword when omitted", function() {
+				var ksPath = variables.testDir & "optional-pass-test.p12";
+				GenerateKeystore(
+					ksPath,
+					variables.keystorePassword,
+					"optkey",
+					"RSA-2048",
+					"CN=optional-pass-test"
+				);
+
+				// call with empty string for keypairPassword - should default to keystorePassword
+				var result = GetKeyPairFromKeystore(
+					ksPath,
+					variables.keystorePassword,
+					"",
+					"optkey"
+				);
+
+				expect( result ).toHaveKey( "private" );
+				expect( result ).toHaveKey( "public" );
+				expect( result ).toHaveKey( "certificate" );
+			});
+
+		});
+
 	}
 
 }

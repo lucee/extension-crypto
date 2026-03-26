@@ -3,7 +3,6 @@ package org.lucee.extension.crypto;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.util.Arrays;
 
 import org.lucee.extension.crypto.util.CryptoUtil;
 

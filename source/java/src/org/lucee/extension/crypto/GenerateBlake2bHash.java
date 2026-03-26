@@ -3,6 +3,7 @@ package org.lucee.extension.crypto;
 import java.nio.charset.StandardCharsets;
 
 import org.bouncycastle.crypto.digests.Blake2bDigest;
+import org.lucee.extension.crypto.util.CryptoUtil;
 
 import lucee.loader.engine.CFMLEngine;
 import lucee.loader.engine.CFMLEngineFactory;
@@ -84,7 +85,7 @@ public class GenerateBlake2bHash extends BIF {
 			digest.doFinal( hash, 0 );
 
 			// Return hex encoded
-			return bytesToHex( hash );
+			return CryptoUtil.bytesToHex( hash );
 		}
 		catch ( PageException pe ) {
 			throw pe;
@@ -92,14 +93,6 @@ public class GenerateBlake2bHash extends BIF {
 		catch ( Exception e ) {
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
-	}
-
-	private static String bytesToHex( byte[] bytes ) {
-		StringBuilder sb = new StringBuilder( bytes.length * 2 );
-		for ( byte b : bytes ) {
-			sb.append( String.format( "%02x", b ) );
-		}
-		return sb.toString();
 	}
 
 	@Override

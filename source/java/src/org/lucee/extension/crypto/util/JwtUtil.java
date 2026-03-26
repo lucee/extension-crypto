@@ -1,10 +1,9 @@
 package org.lucee.extension.crypto.util;
 
-import java.io.StringReader;
-import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -17,11 +16,9 @@ import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.ECDSASigner;
@@ -30,6 +27,8 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.crypto.impl.EdDSAProvider;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWTClaimsSet;
 
 import lucee.loader.engine.CFMLEngine;
@@ -44,17 +43,10 @@ import lucee.runtime.type.Struct;
  */
 public class JwtUtil {
 
-	static {
-		if ( Security.getProvider( BouncyCastleProvider.PROVIDER_NAME ) == null ) {
-			Security.addProvider( new BouncyCastleProvider() );
-		}
-	}
-
 	/**
 	 * Ensures BouncyCastle provider is registered.
 	 */
 	public static void ensureProvider() {
-		// Static initializer already handles this, but CryptoUtil also does it
 		CryptoUtil.ensureProvider();
 	}
 
@@ -74,7 +66,7 @@ public class JwtUtil {
 
 		// byte[] - treat as secret for HMAC
 		if ( key instanceof byte[] ) {
-			return new SecretKeySpec( (byte[]) key, "HmacSHA256" );
+			return new SecretKeySpec( (byte[]) key, hmacAlgorithm( algorithm ) );
 		}
 
 		// String - could be PEM or secret
@@ -88,7 +80,7 @@ public class JwtUtil {
 
 		// For HMAC algorithms, treat string as secret
 		if ( algorithm != null && algorithm.toUpperCase().startsWith( "HS" ) ) {
-			return new SecretKeySpec( keyStr.getBytes( "UTF-8" ), "HmacSHA256" );
+			return new SecretKeySpec( keyStr.getBytes( "UTF-8" ), hmacAlgorithm( algorithm ) );
 		}
 
 		// For non-HMAC algorithms, the key must be PEM format
@@ -116,8 +108,11 @@ public class JwtUtil {
 		if ( key instanceof RSAPrivateKey || key instanceof RSAPublicKey ) {
 			return JWSAlgorithm.RS256;
 		}
-		if ( key instanceof ECPrivateKey || key instanceof ECPublicKey ) {
-			return JWSAlgorithm.ES256;
+		if ( key instanceof ECPrivateKey ) {
+			return ecAlgorithm( ( (ECPrivateKey) key ).getParams().getOrder().bitLength() );
+		}
+		if ( key instanceof ECPublicKey ) {
+			return ecAlgorithm( ( (ECPublicKey) key ).getParams().getOrder().bitLength() );
 		}
 		if ( key instanceof PrivateKey ) {
 			String alg = ( (PrivateKey) key ).getAlgorithm();
@@ -132,7 +127,8 @@ public class JwtUtil {
 			}
 		}
 
-		throw new IllegalArgumentException( "Cannot determine algorithm for key type: " + key.getClass().getName() );
+		throw new IllegalArgumentException( "Cannot determine JWT algorithm for key type: " + key.getClass().getName() +
+			". Supported key types: HMAC secret, RSA, EC (P-256/P-384/P-521), Ed25519." );
 	}
 
 	/**
@@ -172,12 +168,16 @@ public class JwtUtil {
 			throw new IllegalArgumentException( "ECDSA algorithm requires an EC private key, got: " + key.getClass().getName() );
 		}
 
-		// EdDSA - not supported for now, would need additional setup
+		// EdDSA - use BouncyCastle directly (avoids Nimbus's Tink dependency)
 		if ( algorithm.equals( JWSAlgorithm.EdDSA ) ) {
-			throw new IllegalArgumentException( "EdDSA is not yet supported. Use RS256 or ES256 instead." );
+			if ( key instanceof PrivateKey ) {
+				return new BcEdDSASigner( (PrivateKey) key );
+			}
+			throw new IllegalArgumentException( "EdDSA algorithm requires an Ed25519 private key, got: " + key.getClass().getName() );
 		}
 
-		throw new IllegalArgumentException( "Unsupported algorithm: " + algorithm );
+		throw new IllegalArgumentException( "Unsupported signing algorithm: " + algorithm +
+			". Supported: HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512, ES256, ES384, ES512, EdDSA" );
 	}
 
 	/**
@@ -214,12 +214,90 @@ public class JwtUtil {
 			throw new IllegalArgumentException( "ECDSA algorithm requires an EC public key, got: " + key.getClass().getName() );
 		}
 
-		// EdDSA - not supported for now
+		// EdDSA - use BouncyCastle directly (avoids Nimbus's Tink dependency)
 		if ( algorithm.equals( JWSAlgorithm.EdDSA ) ) {
-			throw new IllegalArgumentException( "EdDSA is not yet supported. Use RS256 or ES256 instead." );
+			if ( key instanceof PublicKey ) {
+				return new BcEdDSAVerifier( (PublicKey) key );
+			}
+			throw new IllegalArgumentException( "EdDSA algorithm requires an Ed25519 public key, got: " + key.getClass().getName() );
 		}
 
-		throw new IllegalArgumentException( "Unsupported algorithm: " + algorithm );
+		throw new IllegalArgumentException( "Unsupported verification algorithm: " + algorithm +
+			". Supported: HS256, HS384, HS512, RS256, RS384, RS512, PS256, PS384, PS512, ES256, ES384, ES512, EdDSA" );
+	}
+
+	/**
+	 * Map JWS algorithm name (HS256, HS384, HS512) to Java HMAC algorithm name.
+	 */
+	private static String hmacAlgorithm( String jwsAlg ) {
+		if ( jwsAlg == null ) return "HmacSHA256";
+		switch ( jwsAlg.toUpperCase() ) {
+			case "HS384": return "HmacSHA384";
+			case "HS512": return "HmacSHA512";
+			default: return "HmacSHA256";
+		}
+	}
+
+	/**
+	 * Map EC key bit length to the appropriate JWS algorithm.
+	 */
+	private static JWSAlgorithm ecAlgorithm( int bitLength ) {
+		if ( bitLength > 384 ) return JWSAlgorithm.ES512;  // P-521
+		if ( bitLength > 256 ) return JWSAlgorithm.ES384;  // P-384
+		return JWSAlgorithm.ES256;                          // P-256
+	}
+
+	/**
+	 * EdDSA JWS signer using BouncyCastle's Signature API directly.
+	 * Avoids Nimbus's Ed25519Signer which depends on Google Tink.
+	 */
+	private static class BcEdDSASigner extends EdDSAProvider implements JWSSigner {
+		private final PrivateKey privateKey;
+
+		BcEdDSASigner( PrivateKey privateKey ) {
+			this.privateKey = privateKey;
+		}
+
+		@Override
+		public Base64URL sign( JWSHeader header, byte[] signingInput ) throws JOSEException {
+			try {
+				Signature signer = Signature.getInstance( privateKey.getAlgorithm(), "BC" );
+				signer.initSign( privateKey );
+				signer.update( signingInput );
+				return Base64URL.encode( signer.sign() );
+			}
+			catch ( Exception e ) {
+				throw new JOSEException( "EdDSA signing failed: " + e.getMessage(), e );
+			}
+		}
+	}
+
+	/**
+	 * EdDSA JWS verifier using BouncyCastle's Signature API directly.
+	 * Avoids Nimbus's Ed25519Verifier which depends on Google Tink.
+	 */
+	private static class BcEdDSAVerifier extends EdDSAProvider implements JWSVerifier {
+		private final PublicKey publicKey;
+
+		BcEdDSAVerifier( PublicKey publicKey ) {
+			this.publicKey = publicKey;
+		}
+
+		@Override
+		public boolean verify( JWSHeader header, byte[] signingInput, Base64URL signature ) throws JOSEException {
+			try {
+				Signature verifier = Signature.getInstance( publicKey.getAlgorithm(), "BC" );
+				verifier.initVerify( publicKey );
+				verifier.update( signingInput );
+				return verifier.verify( signature.decode() );
+			}
+			catch ( SignatureException e ) {
+				return false;
+			}
+			catch ( Exception e ) {
+				throw new JOSEException( "EdDSA verification failed: " + e.getMessage(), e );
+			}
+		}
 	}
 
 	/**

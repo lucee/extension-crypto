@@ -1,9 +1,8 @@
 package org.lucee.extension.crypto;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
 import org.bouncycastle.crypto.generators.SCrypt;
+import org.lucee.extension.crypto.util.CryptoUtil;
 
 import lucee.loader.engine.CFMLEngine;
 import lucee.loader.engine.CFMLEngineFactory;
@@ -17,16 +16,26 @@ import lucee.runtime.util.Cast;
  *
  * Usage:
  *   isValid = VerifySCryptHash( "password", hash )
+ *   isValid = VerifySCryptHash( "password", hash, true )  // throws on invalid hash format
  */
 public class VerifySCryptHash extends BIF {
 
 	private static final long serialVersionUID = 1L;
 
-	public static Boolean call( PageContext pc, String input, String hash ) throws PageException {
+	public static Object call( PageContext pc, String input, String hash ) throws PageException {
+		return call( pc, input, hash, false );
+	}
+
+	public static Object call( PageContext pc, String input, String hash, Boolean throwOnError ) throws PageException {
+		boolean shouldThrow = throwOnError != null && throwOnError;
 		try {
 			// Parse the hash string
 			ParsedHash parsed = parseHash( hash );
 			if ( parsed == null ) {
+				if ( shouldThrow ) {
+					throw CFMLEngineFactory.getInstance().getExceptionUtil()
+						.createApplicationException( "Invalid SCrypt hash format" );
+				}
 				return false;
 			}
 
@@ -39,9 +48,15 @@ public class VerifySCryptHash extends BIF {
 			);
 
 			// Constant-time comparison
-			return constantTimeEquals( testHash, parsed.hash );
+			return CryptoUtil.constantTimeEquals( testHash, parsed.hash );
+		}
+		catch ( PageException pe ) {
+			throw pe;
 		}
 		catch ( Exception e ) {
+			if ( shouldThrow ) {
+				throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
+			}
 			return false;
 		}
 	}
@@ -82,38 +97,12 @@ public class VerifySCryptHash extends BIF {
 		}
 
 		// Parse salt (parts[3])
-		result.salt = Base64.getDecoder().decode( addPadding( parts[3] ) );
+		result.salt = CryptoUtil.base64DecodeLenient( parts[3] );
 
 		// Parse hash (parts[4])
-		result.hash = Base64.getDecoder().decode( addPadding( parts[4] ) );
+		result.hash = CryptoUtil.base64DecodeLenient( parts[4] );
 
 		return result;
-	}
-
-	/**
-	 * Add padding to Base64 string if needed.
-	 */
-	private static String addPadding( String base64 ) {
-		int padding = ( 4 - base64.length() % 4 ) % 4;
-		StringBuilder sb = new StringBuilder( base64 );
-		for ( int i = 0; i < padding; i++ ) {
-			sb.append( '=' );
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Constant-time byte array comparison to prevent timing attacks.
-	 */
-	private static boolean constantTimeEquals( byte[] a, byte[] b ) {
-		if ( a.length != b.length ) {
-			return false;
-		}
-		int result = 0;
-		for ( int i = 0; i < a.length; i++ ) {
-			result |= a[i] ^ b[i];
-		}
-		return result == 0;
 	}
 
 	private static class ParsedHash {
@@ -136,7 +125,8 @@ public class VerifySCryptHash extends BIF {
 
 		String input = cast.toString( args[0] );
 		String hash = cast.toString( args[1] );
+		Boolean throwOnError = args.length > 2 && args[2] != null ? cast.toBoolean( args[2] ) : false;
 
-		return call( pc, input, hash );
+		return call( pc, input, hash, throwOnError );
 	}
 }

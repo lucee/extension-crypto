@@ -364,4 +364,67 @@ public class CryptoUtil {
 	public static PageException toPageException( Exception e ) {
 		return CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 	}
+
+	/**
+	 * Convert bytes to hex string.
+	 */
+	public static String bytesToHex( byte[] bytes ) {
+		StringBuilder sb = new StringBuilder( bytes.length * 2 );
+		for ( byte b : bytes ) {
+			sb.append( String.format( "%02x", b ) );
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Constant-time byte array comparison to prevent timing attacks.
+	 * Delegates to MessageDigest.isEqual() which handles length differences
+	 * without leaking timing information.
+	 */
+	public static boolean constantTimeEquals( byte[] a, byte[] b ) {
+		return java.security.MessageDigest.isEqual( a, b );
+	}
+
+	/**
+	 * Decode a Base64 string that may or may not have padding.
+	 * Uses MIME decoder which is lenient with padding and whitespace.
+	 */
+	public static byte[] base64DecodeLenient( String base64 ) {
+		return Base64.getMimeDecoder().decode( base64 );
+	}
+
+	/**
+	 * Get a BouncyCastle Digest instance for the given algorithm name.
+	 */
+	public static org.bouncycastle.crypto.Digest getDigest( String algorithm ) {
+		if ( algorithm == null || algorithm.trim().isEmpty() ) {
+			return new org.bouncycastle.crypto.digests.SHA256Digest();
+		}
+
+		switch ( algorithm.trim().toUpperCase().replace( "-", "" ) ) {
+			case "SHA256":
+			case "SHA2256":
+				return new org.bouncycastle.crypto.digests.SHA256Digest();
+			case "SHA384":
+			case "SHA2384":
+				return new org.bouncycastle.crypto.digests.SHA384Digest();
+			case "SHA512":
+			case "SHA2512":
+				return new org.bouncycastle.crypto.digests.SHA512Digest();
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * Convert an object to bytes, handling binary and string inputs.
+	 * Returns null for null or empty string inputs.
+	 */
+	public static byte[] toBytesOrNull( Object obj ) throws PageException {
+		if ( obj == null ) return null;
+		if ( obj instanceof byte[] ) return (byte[]) obj;
+		String str = CFMLEngineFactory.getInstance().getCastUtil().toString( obj );
+		if ( str.isEmpty() ) return null;
+		return str.getBytes( StandardCharsets.UTF_8 );
+	}
 }

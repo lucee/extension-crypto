@@ -8,7 +8,7 @@
 	<packaging>jar</packaging>
 
 	<name>Crypto Extension</name>
-	<description>BouncyCastle-based cryptographic functions for Lucee: key generation (RSA, EC, EdDSA), PEM handling, certificates, password hashing (Argon2, BCrypt, SCrypt), and more.</description>
+	<description>Lucee extension providing cryptographic functions via BouncyCastle and Nimbus JOSE+JWT: key pair generation (RSA, EC, EdDSA, post-quantum), JWT sign/verify, digital signatures, PEM/certificate handling, password hashing (Argon2, BCrypt, SCrypt), Blake2/Blake3, HKDF key derivation, and keystore management.</description>
 	<url>https://github.com/lucee/extension-crypto</url>
 
 	<properties>
@@ -151,18 +151,18 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.11.0</version>
+				<version>3.15.0</version>
 				<configuration>
 					<source>11</source>
 					<target>11</target>
 				</configuration>
 			</plugin>
 
-			<!-- Copy specific dependency JARs for bundling -->
+			<!-- Copy dependencies in Maven repo layout for embedding in .lex -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>3.6.0</version>
+				<version>3.10.0</version>
 				<executions>
 					<execution>
 						<id>copy-dependencies</id>
@@ -171,38 +171,52 @@
 							<goal>copy-dependencies</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>${project.build.directory}/dependency-jars</outputDirectory>
-							<includeScope>compile</includeScope>
-							<includeArtifactIds>bcprov-jdk18on,bcpkix-jdk18on,bcutil-jdk18on,nimbus-jose-jwt</includeArtifactIds>
+							<outputDirectory>${project.build.directory}/maven-repo</outputDirectory>
+							<useRepositoryLayout>true</useRepositoryLayout>
+							<copyPom>true</copyPom>
+							<excludeScope>provided</excludeScope>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
-			<!-- JAR with OSGi manifest -->
+			<!-- Copy extension JAR into maven repo layout -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>copy-extension-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<mkdir dir="${project.build.directory}/maven-repo/org/lucee/${project.artifactId}/${project.version}" />
+								<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar"
+									  todir="${project.build.directory}/maven-repo/org/lucee/${project.artifactId}/${project.version}" />
+								<copy file="${basedir}/.flattened-pom.xml"
+									  tofile="${project.build.directory}/maven-repo/org/lucee/${project.artifactId}/${project.version}/${project.artifactId}-${project.version}.pom" />
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Plain JAR (no OSGi headers needed for 7.0.3+ maven classloading) -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.3.0</version>
-				<configuration>
-					<archive>
-						<manifestEntries>
-							<Bundle-Name>extension-crypto</Bundle-Name>
-							<Bundle-SymbolicName>extension-crypto</Bundle-SymbolicName>
-							<Bundle-Version>${project.version}</Bundle-Version>
-							<Export-Package>org.lucee.extension.crypto,org.lucee.extension.crypto.util</Export-Package>
-							<Require-Bundle>bcprov;bundle-version="1.83",bcpkix;bundle-version="1.83",bcutil;bundle-version="1.83"</Require-Bundle>
-							<DynamicImport-Package>*</DynamicImport-Package>
-						</manifestEntries>
-					</archive>
-				</configuration>
+				<version>3.5.0</version>
 			</plugin>
 
 			<!-- Assemble .lex extension package -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.6.0</version>
+				<version>3.8.0</version>
 				<executions>
 					<execution>
 						<id>create-lex</id>
@@ -225,7 +239,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.3.0</version>
+				<version>3.4.0</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -240,7 +254,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.6.3</version>
+				<version>3.12.0</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -259,7 +273,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>flatten-maven-plugin</artifactId>
-				<version>1.6.0</version>
+				<version>1.7.0</version>
 				<configuration>
 					<updatePomFile>true</updatePomFile>
 					<flattenMode>oss</flattenMode>
@@ -286,7 +300,7 @@
 			<plugin>
 				<groupId>org.sonatype.central</groupId>
 				<artifactId>central-publishing-maven-plugin</artifactId>
-				<version>0.8.0</version>
+				<version>0.10.0</version>
 				<extensions>true</extensions>
 				<configuration>
 					<publishingServerId>ossrh</publishingServerId>
@@ -315,7 +329,7 @@
 		<dependency>
 			<groupId>com.nimbusds</groupId>
 			<artifactId>nimbus-jose-jwt</artifactId>
-			<version>10.6</version>
+			<version>10.8</version>
 		</dependency>
 
 		<!-- Lucee (provided - not bundled) -->
@@ -353,7 +367,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>3.0.1</version>
+						<version>3.2.8</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>

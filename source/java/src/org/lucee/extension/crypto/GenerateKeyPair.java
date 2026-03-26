@@ -1,6 +1,7 @@
 package org.lucee.extension.crypto;
 
 import java.security.KeyPair;
+import java.util.Base64;
 
 import org.lucee.extension.crypto.util.CryptoUtil;
 
@@ -55,7 +56,7 @@ public class GenerateKeyPair extends BIF {
 			switch ( format ) {
 				case "PEM":
 				case "PKCS8":
-					// PKCS#8 format (algorithm-agnostic, modern standard)
+					// PEM defaults to PKCS#8 format (algorithm-agnostic, modern standard)
 					result.set( "private", CryptoUtil.toPemPKCS8( keyPair.getPrivate() ) );
 					result.set( "public", CryptoUtil.toPem( keyPair.getPublic() ) );
 					break;
@@ -79,13 +80,13 @@ public class GenerateKeyPair extends BIF {
 					break;
 
 				case "BASE64":
-					result.set( "private", java.util.Base64.getEncoder().encodeToString( keyPair.getPrivate().getEncoded() ) );
-					result.set( "public", java.util.Base64.getEncoder().encodeToString( keyPair.getPublic().getEncoded() ) );
+					result.set( "private", Base64.getEncoder().encodeToString( keyPair.getPrivate().getEncoded() ) );
+					result.set( "public", Base64.getEncoder().encodeToString( keyPair.getPublic().getEncoded() ) );
 					break;
 
 				default:
 					throw eng.getExceptionUtil().createApplicationException(
-						"Unknown format: " + format + ". Use PEM, PKCS8, traditional, DER, or Base64." );
+						"Unknown format: " + format + ". Use PEM, PKCS8, traditional, OPENSSL, DER, or Base64." );
 			}
 
 			return result;

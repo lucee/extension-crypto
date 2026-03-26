@@ -2,6 +2,8 @@ package org.lucee.extension.crypto;
 
 import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 
 import org.lucee.extension.crypto.util.CryptoUtil;
 
@@ -57,12 +59,12 @@ public class CertificateInfo extends BIF {
 			result.set( "publicKeyAlgorithm", cert.getPublicKey().getAlgorithm() );
 
 			// Public key size (for RSA)
-			if ( cert.getPublicKey() instanceof java.security.interfaces.RSAPublicKey ) {
-				java.security.interfaces.RSAPublicKey rsaKey = (java.security.interfaces.RSAPublicKey) cert.getPublicKey();
+			if ( cert.getPublicKey() instanceof RSAPublicKey ) {
+				RSAPublicKey rsaKey = (RSAPublicKey) cert.getPublicKey();
 				result.set( "publicKeySize", rsaKey.getModulus().bitLength() );
 			}
-			else if ( cert.getPublicKey() instanceof java.security.interfaces.ECPublicKey ) {
-				java.security.interfaces.ECPublicKey ecKey = (java.security.interfaces.ECPublicKey) cert.getPublicKey();
+			else if ( cert.getPublicKey() instanceof ECPublicKey ) {
+				ECPublicKey ecKey = (ECPublicKey) cert.getPublicKey();
 				result.set( "publicKeySize", ecKey.getParams().getOrder().bitLength() );
 			}
 

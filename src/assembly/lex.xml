@@ -7,23 +7,14 @@
 	</formats>
 	<includeBaseDirectory>false</includeBaseDirectory>
 
-	<!-- Include the extension JAR -->
-	<files>
-		<file>
-			<source>${project.build.directory}/${project.artifactId}-${project.version}.jar</source>
-			<destName>${project.artifactId}-${project.version}.jar</destName>
-			<outputDirectory>jars</outputDirectory>
-		</file>
-	</files>
-
-	<!-- Include dependency JARs and extension resources -->
+	<!-- Include extension resources and embedded maven repo -->
 	<fileSets>
-		<!-- BouncyCastle and Nimbus JARs -->
+		<!-- Embedded Maven repo (extension JAR + all dependencies in repo layout) -->
 		<fileSet>
-			<directory>${project.build.directory}/dependency-jars</directory>
-			<outputDirectory>jars</outputDirectory>
+			<directory>${project.build.directory}/maven-repo</directory>
+			<outputDirectory>maven</outputDirectory>
 			<includes>
-				<include>*.jar</include>
+				<include>**/*</include>
 			</includes>
 		</fileSet>
 		<!-- FLD -->

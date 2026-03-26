@@ -1,13 +1,9 @@
 package org.lucee.extension.crypto;
 
-import java.nio.charset.StandardCharsets;
-
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import org.lucee.extension.crypto.util.CryptoUtil;
 
 import lucee.loader.engine.CFMLEngine;
 import lucee.loader.engine.CFMLEngineFactory;
@@ -39,20 +35,20 @@ public class HKDFExpand extends BIF {
 			CFMLEngine eng = CFMLEngineFactory.getInstance();
 
 			// Get digest
-			Digest digest = getDigest( algorithm );
+			Digest digest = CryptoUtil.getDigest( algorithm );
 			if ( digest == null ) {
 				throw eng.getExceptionUtil().createApplicationException(
 					"Unsupported algorithm: " + algorithm + ". Use SHA256, SHA384, or SHA512." );
 			}
 
 			// Convert PRK to bytes
-			byte[] prkBytes = toBytes( eng, prk );
+			byte[] prkBytes = CryptoUtil.toBytesOrNull( prk );
 			if ( prkBytes == null || prkBytes.length == 0 ) {
 				throw eng.getExceptionUtil().createApplicationException( "PRK (pseudo-random key) is required" );
 			}
 
 			// Convert info to bytes (optional)
-			byte[] infoBytes = toBytes( eng, info );
+			byte[] infoBytes = CryptoUtil.toBytesOrNull( info );
 
 			// Validate output length
 			int outLen = outputLength != null ? outputLength.intValue() : 32;
@@ -78,32 +74,6 @@ public class HKDFExpand extends BIF {
 		catch ( Exception e ) {
 			throw CFMLEngineFactory.getInstance().getCastUtil().toPageException( e );
 		}
-	}
-
-	private static Digest getDigest( String algorithm ) {
-		if ( algorithm == null || algorithm.trim().isEmpty() ) return new SHA256Digest();
-
-		switch ( algorithm.trim().toUpperCase().replace( "-", "" ) ) {
-			case "SHA256":
-			case "SHA2256":
-				return new SHA256Digest();
-			case "SHA384":
-			case "SHA2384":
-				return new SHA384Digest();
-			case "SHA512":
-			case "SHA2512":
-				return new SHA512Digest();
-			default:
-				return null;
-		}
-	}
-
-	private static byte[] toBytes( CFMLEngine eng, Object obj ) throws PageException {
-		if ( obj == null ) return null;
-		if ( obj instanceof byte[] ) return (byte[]) obj;
-		String str = eng.getCastUtil().toString( obj );
-		if ( str.isEmpty() ) return null;
-		return str.getBytes( StandardCharsets.UTF_8 );
 	}
 
 	@Override

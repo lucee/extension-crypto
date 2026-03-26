@@ -134,6 +134,21 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 
 		});
 
+		describe( "Blake3 XOF output length behaviour", function() {
+
+			it( "produces correct output for 1-byte length", function() {
+				var hash = GenerateBlake3Hash( "test", 1 );
+				expect( len( hash ) ).toBe( 2 );  // 1 byte = 2 hex chars
+			});
+
+			it( "shorter output is prefix of longer output (XOF property)", function() {
+				var hash32 = GenerateBlake3Hash( "test", 32 );
+				var hash64 = GenerateBlake3Hash( "test", 64 );
+				expect( hash64 ).toMatch( "^" & hash32 );
+			});
+
+		});
+
 		describe( "Blake hash comparison", function() {
 
 			it( "Blake2b, Blake2s, and Blake3 produce different hashes", function() {

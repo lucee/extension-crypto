@@ -252,6 +252,78 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 
 		});
 
+		describe( "JwtSign with EdDSA (Ed25519)", function() {
+
+			it( "signs and verifies a JWT with Ed25519 key", function() {
+				var keyPair = GenerateKeyPair( "Ed25519" );
+				var token = JwtSign(
+					claims = { sub: "ed25519user" },
+					key = keyPair.private,
+					algorithm = "EdDSA"
+				);
+
+				expect( token ).toBeString();
+				expect( listLen( token, "." ) ).toBe( 3 );
+
+				var decoded = JwtDecode( token );
+				expect( decoded.header.alg ).toBe( "EdDSA" );
+
+				var claims = JwtVerify( token = token, key = keyPair.public );
+				expect( claims.sub ).toBe( "ed25519user" );
+			});
+
+			it( "auto-detects EdDSA algorithm from Ed25519 key", function() {
+				var keyPair = GenerateKeyPair( "Ed25519" );
+				var token = JwtSign(
+					claims = { sub: "autodetect" },
+					key = keyPair.private
+				);
+
+				var decoded = JwtDecode( token );
+				expect( decoded.header.alg ).toBe( "EdDSA" );
+			});
+
+			it( "rejects verification with wrong Ed25519 key", function() {
+				var keyPair1 = GenerateKeyPair( "Ed25519" );
+				var keyPair2 = GenerateKeyPair( "Ed25519" );
+				var token = JwtSign(
+					claims = { sub: "test" },
+					key = keyPair1.private,
+					algorithm = "EdDSA"
+				);
+
+				expect( function() {
+					JwtVerify( token = token, key = keyPair2.public );
+				}).toThrow();
+			});
+
+		});
+
+		describe( "JwtSign EC algorithm auto-detection by curve", function() {
+
+			it( "auto-detects ES256 for P-256 key", function() {
+				var keyPair = GenerateKeyPair( "P-256" );
+				var token = JwtSign( claims = { sub: "test" }, key = keyPair.private );
+				var decoded = JwtDecode( token );
+				expect( decoded.header.alg ).toBe( "ES256" );
+			});
+
+			it( "auto-detects ES384 for P-384 key", function() {
+				var keyPair = GenerateKeyPair( "P-384" );
+				var token = JwtSign( claims = { sub: "test" }, key = keyPair.private );
+				var decoded = JwtDecode( token );
+				expect( decoded.header.alg ).toBe( "ES384" );
+			});
+
+			it( "auto-detects ES512 for P-521 key", function() {
+				var keyPair = GenerateKeyPair( "P-521" );
+				var token = JwtSign( claims = { sub: "test" }, key = keyPair.private );
+				var decoded = JwtDecode( token );
+				expect( decoded.header.alg ).toBe( "ES512" );
+			});
+
+		});
+
 	}
 
 }

@@ -97,13 +97,14 @@ public class GetKeyPairFromKeystore extends BIF {
 		if ( args.length < 4 ) {
 			throw eng.getExceptionUtil().createFunctionException(
 				pc, "GetKeyPairFromKeystore", 4, "keystoreAlias",
-				"keystore, keystorePassword, and keystoreAlias are required", null
+				"keystore, keystorePassword, keypairPassword, and keystoreAlias are required", null
 			);
 		}
 
 		String keystorePath = cast.toString( args[0] );
 		String keystorePassword = cast.toString( args[1] );
-		String keypairPassword = args.length > 2 && args[2] != null ? cast.toString( args[2] ) : null;
+		String keypairPassword = args.length > 2 && args[2] != null && !eng.getDecisionUtil().isEmpty( args[2] )
+			? cast.toString( args[2] ) : null;
 		String alias = cast.toString( args[3] );
 		String keystoreType = args.length > 4 && args[4] != null ? cast.toString( args[4] ) : null;
 

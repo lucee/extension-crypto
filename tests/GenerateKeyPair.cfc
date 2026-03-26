@@ -82,6 +82,29 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 
 		});
 
+		describe( "GenerateKeyPair format consistency", function() {
+
+			it( "PEM format produces PKCS8 private key header", function() {
+				var keyPair = GenerateKeyPair( "RSA-2048", { format: "PEM" } );
+				expect( keyPair.private ).toInclude( "-----BEGIN PRIVATE KEY-----" );
+				expect( keyPair.private ).notToInclude( "-----BEGIN RSA PRIVATE KEY-----" );
+			});
+
+			it( "PKCS8 format produces same header as PEM format", function() {
+				var kp1 = GenerateKeyPair( "P-256", { format: "PEM" } );
+				var kp2 = GenerateKeyPair( "P-256", { format: "PKCS8" } );
+
+				expect( kp1.private ).toInclude( "-----BEGIN PRIVATE KEY-----" );
+				expect( kp2.private ).toInclude( "-----BEGIN PRIVATE KEY-----" );
+			});
+
+			it( "OPENSSL format is alias for traditional", function() {
+				var keyPair = GenerateKeyPair( "RSA-2048", { format: "OPENSSL" } );
+				expect( keyPair.private ).toInclude( "-----BEGIN RSA PRIVATE KEY-----" );
+			});
+
+		});
+
 	}
 
 }
