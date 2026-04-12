@@ -6,6 +6,13 @@ Modern cryptographic functions for Lucee, powered by [BouncyCastle](https://www.
 
 **Requires Lucee 7.0.3+** — uses maven-based classloading (no OSGi).
 
+Install via Lucee Admin, or pin in your environment:
+
+```bash
+# Lucee 7.0.3+ (Maven coordinates)
+LUCEE_EXTENSIONS=org.lucee:crypto-extension:1.0.0.0-SNAPSHOT
+```
+
 ## Key Pair Generation
 
 Generate cryptographic key pairs for various algorithms including RSA, Elliptic Curve, EdDSA, and post-quantum algorithms.
