@@ -228,7 +228,11 @@ public class CryptoUtil {
 			JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter().setProvider( "BC" );
 
 			if ( obj instanceof PEMKeyPair ) {
-				return keyConverter.getKeyPair( (PEMKeyPair) obj );
+				PEMKeyPair pemKp = (PEMKeyPair) obj;
+				if ( pemKp.getPublicKeyInfo() == null ) {
+					return keyConverter.getPrivateKey( pemKp.getPrivateKeyInfo() );
+				}
+				return keyConverter.getKeyPair( pemKp );
 			}
 			else if ( obj instanceof PrivateKeyInfo ) {
 				return keyConverter.getPrivateKey( (PrivateKeyInfo) obj );
