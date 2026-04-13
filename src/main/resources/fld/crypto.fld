@@ -1401,6 +1401,118 @@
 	</function>
 
 	<!-- ==================== -->
+	<!-- CBOR / COSE          -->
+	<!-- ==================== -->
+
+	<!-- CborDecode -->
+	<function>
+		<name>CborDecode</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.CborDecode</class>
+		<description>Decodes CBOR-encoded binary data to CFML types (struct, array, string, number, binary, boolean).</description>
+		<argument>
+			<name>data</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>CBOR-encoded binary data</description>
+		</argument>
+		<argument>
+			<name>options</name>
+			<type>struct</type>
+			<required>No</required>
+			<description>Optional struct with: preserveTags (boolean, default true) - when false, tagged values are unwrapped to just the inner value</description>
+		</argument>
+		<return>
+			<type>any</type>
+			<description>Decoded value: struct, array, string, number, binary, or boolean</description>
+		</return>
+	</function>
+
+	<!-- CborEncode -->
+	<function>
+		<name>CborEncode</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.CborEncode</class>
+		<description>Encodes a CFML value (struct, array, string, number, binary, boolean) to CBOR binary format.</description>
+		<argument>
+			<name>data</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>CFML value to encode (struct, array, string, number, binary, boolean)</description>
+		</argument>
+		<return>
+			<type>binary</type>
+			<description>CBOR-encoded binary data</description>
+		</return>
+	</function>
+
+	<!-- CborToJson -->
+	<function>
+		<name>CborToJson</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.CborToJson</class>
+		<description>Converts CBOR-encoded binary data directly to a JSON string.</description>
+		<argument>
+			<name>data</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>CBOR-encoded binary data</description>
+		</argument>
+		<return>
+			<type>string</type>
+			<description>JSON string representation of the CBOR data</description>
+		</return>
+	</function>
+
+	<!-- JsonToCbor -->
+	<function>
+		<name>JsonToCbor</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.JsonToCbor</class>
+		<description>Converts a JSON string to CBOR-encoded binary data.</description>
+		<argument>
+			<name>json</name>
+			<type>string</type>
+			<required>Yes</required>
+			<description>JSON string to convert</description>
+		</argument>
+		<return>
+			<type>binary</type>
+			<description>CBOR-encoded binary data</description>
+		</return>
+	</function>
+
+	<!-- CoseToKey -->
+	<function>
+		<name>CoseToKey</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.CoseToKey</class>
+		<description>Converts a COSE key (struct with integer keys per RFC 9052, or raw CBOR bytes) to a Java security key object. Supports EC (P-256, P-384, P-521) and Ed25519 keys.</description>
+		<argument>
+			<name>coseKey</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>COSE key as a struct (from CborDecode) or raw CBOR-encoded binary</description>
+		</argument>
+		<return>
+			<type>any</type>
+			<description>Java PublicKey or PrivateKey object</description>
+		</return>
+	</function>
+
+	<!-- KeyToCose -->
+	<function>
+		<name>KeyToCose</name>
+		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.KeyToCose</class>
+		<description>Converts a Java key object, PEM string, or key pair struct to a COSE key struct (integer keys per RFC 9052). Supports EC (P-256, P-384, P-521) and Ed25519 keys.</description>
+		<argument>
+			<name>key</name>
+			<type>any</type>
+			<required>Yes</required>
+			<description>Key to convert: PublicKey, PrivateKey, PEM string, or key pair struct from GenerateKeyPair()</description>
+		</argument>
+		<return>
+			<type>struct</type>
+			<description>COSE key struct with integer keys (1=kty, 3=alg, -1=crv, -2=x, -3=y)</description>
+		</return>
+	</function>
+
+	<!-- ==================== -->
 	<!-- JWK / JWKS           -->
 	<!-- ==================== -->
 
