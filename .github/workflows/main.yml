@@ -44,7 +44,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build extension
-        run: mvn -B -e clean verify
+        run: mvn -B -e clean package
 
       - name: Cache Lucee files
         uses: actions/cache@v5

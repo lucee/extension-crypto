@@ -9,6 +9,14 @@
 
 	<!-- Include extension resources and embedded maven repo -->
 	<fileSets>
+		<!-- Logo -->
+		<fileSet>
+			<directory>${project.basedir}/source/images</directory>
+			<outputDirectory>META-INF</outputDirectory>
+			<includes>
+				<include>logo.png</include>
+			</includes>
+		</fileSet>
 		<!-- Embedded Maven repo (extension JAR + all dependencies in repo layout) -->
 		<fileSet>
 			<directory>${project.build.directory}/maven-repo</directory>

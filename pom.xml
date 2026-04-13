@@ -106,47 +106,6 @@
 				</executions>
 			</plugin>
 
-			<!-- Copy/rename resources and final .lex file -->
-			<plugin>
-				<groupId>com.coderplus.maven.plugins</groupId>
-				<artifactId>copy-rename-maven-plugin</artifactId>
-				<version>1.0.1</version>
-				<executions>
-					<execution>
-						<id>rename-manifest</id>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>rename</goal>
-						</goals>
-						<configuration>
-							<sourceFile>${project.build.directory}/extension-resources/META-INF/extension-manifest.txt</sourceFile>
-							<destinationFile>${project.build.directory}/extension-resources/META-INF/MANIFEST.MF</destinationFile>
-						</configuration>
-					</execution>
-					<execution>
-						<id>copy-fld</id>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-						<configuration>
-							<sourceFile>${project.build.directory}/extension-resources/fld/crypto.fld</sourceFile>
-							<destinationFile>${project.build.directory}/extension-resources/flds/crypto.fld</destinationFile>
-						</configuration>
-					</execution>
-					<execution>
-						<id>rename-lex</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>rename</goal>
-						</goals>
-						<configuration>
-							<sourceFile>${project.build.directory}/${project.artifactId}-${project.version}.zip</sourceFile>
-							<destinationFile>${project.build.directory}/${project.artifactId}-${project.version}.lex</destinationFile>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -236,7 +195,49 @@
 				</executions>
 			</plugin>
 
-			<!-- Attach .lex as a Maven artifact (after rename from .zip) -->
+			<!-- Copy/rename resources and .lex file (declared after assembly for correct package-phase ordering) -->
+			<plugin>
+				<groupId>com.coderplus.maven.plugins</groupId>
+				<artifactId>copy-rename-maven-plugin</artifactId>
+				<version>1.0.1</version>
+				<executions>
+					<execution>
+						<id>rename-manifest</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>rename</goal>
+						</goals>
+						<configuration>
+							<sourceFile>${project.build.directory}/extension-resources/META-INF/extension-manifest.txt</sourceFile>
+							<destinationFile>${project.build.directory}/extension-resources/META-INF/MANIFEST.MF</destinationFile>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-fld</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<sourceFile>${project.build.directory}/extension-resources/fld/crypto.fld</sourceFile>
+							<destinationFile>${project.build.directory}/extension-resources/flds/crypto.fld</destinationFile>
+						</configuration>
+					</execution>
+					<execution>
+						<id>rename-lex</id>
+						<phase>package</phase>
+						<goals>
+							<goal>rename</goal>
+						</goals>
+						<configuration>
+							<sourceFile>${project.build.directory}/${project.artifactId}-${project.version}.zip</sourceFile>
+							<destinationFile>${project.build.directory}/${project.artifactId}-${project.version}.lex</destinationFile>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Attach .lex as a Maven artifact -->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
@@ -244,7 +245,7 @@
 				<executions>
 					<execution>
 						<id>attach-lex</id>
-						<phase>verify</phase>
+						<phase>package</phase>
 						<goals>
 							<goal>attach-artifact</goal>
 						</goals>
@@ -355,6 +356,13 @@
 			<groupId>com.nimbusds</groupId>
 			<artifactId>nimbus-jose-jwt</artifactId>
 			<version>10.8</version>
+		</dependency>
+
+		<!-- CBOR encoding/decoding (CC0 license) -->
+		<dependency>
+			<groupId>com.upokecenter</groupId>
+			<artifactId>cbor</artifactId>
+			<version>4.5.4</version>
 		</dependency>
 
 		<!-- Lucee (provided - not bundled) -->

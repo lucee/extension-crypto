@@ -1,4 +1,4 @@
-# Lucee Extension Crypto
+# Lucee Crypto Extension
 
 [![Java CI](https://github.com/lucee/extension-crypto/actions/workflows/main.yml/badge.svg)](https://github.com/lucee/extension-crypto/actions/workflows/main.yml)
 
@@ -6,473 +6,52 @@ Modern cryptographic functions for Lucee, powered by [BouncyCastle](https://www.
 
 **Requires Lucee 7.0.3+** — uses maven-based classloading (no OSGi).
 
+## Installation
+
 Install via Lucee Admin, or pin in your environment:
 
 ```bash
-# Lucee 7.0.3+ (Maven coordinates)
 LUCEE_EXTENSIONS=org.lucee:crypto-extension:1.0.0.0-SNAPSHOT
 ```
 
-## Key Pair Generation
+## Documentation
 
-Generate cryptographic key pairs for various algorithms including RSA, Elliptic Curve, EdDSA, and post-quantum algorithms.
+Full documentation with examples is available at **[docs.lucee.org/categories/crypto](https://docs.lucee.org/categories/crypto.html)**.
 
-```cfml
-// RSA key pair (default 2048-bit)
-keys = GenerateKeyPair( "RSA" );
-keys = GenerateKeyPair( "RSA-4096" );
+### What's Included
 
-// Elliptic Curve
-keys = GenerateKeyPair( "P-256" );
-keys = GenerateKeyPair( "P-384" );
-keys = GenerateKeyPair( "P-521" );
+- **Key Pairs & Conversion** — RSA, EC (P-256/384/521), EdDSA (Ed25519/Ed448), post-quantum (Kyber, Dilithium). PEM and JWK conversion.
+- **JWT** — Sign, verify, and decode JWTs. HMAC, RSA, EC, PSS, EdDSA algorithms. JWKS loading for OAuth2/OIDC.
+- **Digital Signatures** — Sign and verify data with asymmetric keys.
+- **Password Hashing** — Argon2 (OWASP defaults), BCrypt, SCrypt.
+- **TOTP / HOTP** — Two-factor authentication (RFC 6238 / RFC 4226).
+- **Certificates & Keystores** — Self-signed certs, CSRs, PKCS12/JKS keystore management.
+- **Blake Hashing** — Blake2b, Blake2s, Blake3.
+- **HKDF** — Key derivation (extract-then-expand).
+- **Post-Quantum Key Exchange** — ML-KEM/Kyber key encapsulation.
+- **CBOR** — Encode/decode CBOR binary format, JSON conversion. COSE key conversion for WebAuthn/passkeys.
+- **Base64URL** — URL-safe Base64 encoding/decoding.
 
-// EdDSA (modern, fast)
-keys = GenerateKeyPair( "Ed25519" );
-keys = GenerateKeyPair( "Ed448" );
-
-// Post-quantum (experimental)
-keys = GenerateKeyPair( "Kyber768" );
-keys = GenerateKeyPair( "Dilithium3" );
-
-// Access the keys
-writeOutput( keys.private );
-writeOutput( keys.public );
-
-// Validate a key pair matches
-isValid = ValidateKeyPair( keys.private, keys.public );
-```
-
-### Key Conversion
+### Quick Example
 
 ```cfml
-// PEM <-> Java key objects
-privateKey = PemToKey( pemString );
-pemString = KeyToPem( javaKeyObject );
-
-// JWK <-> Java key objects
-jwk = KeyToJwk( keys );              // key pair struct, PEM string, or Java key
-jwk = KeyToJwk( keys.public );       // public-only JWK (no private material)
-key = JwkToKey( jwk );               // JWK struct or JSON string -> Java key
-```
-
-## Digital Signatures
-
-Sign and verify data using asymmetric cryptography.
-
-```cfml
-// Generate keys
+// JWT authentication flow
 keys = GenerateKeyPair( "Ed25519" );
 
-// Sign data
-signature = GenerateSignature( "data to sign", keys.private );
-
-// Verify signature
-isValid = VerifySignature( "data to sign", signature, keys.public );
-```
-
-## JSON Web Tokens (JWT)
-
-Create, verify, and decode JWTs using HMAC or asymmetric algorithms.
-
-### Sign a JWT
-
-```cfml
-// HMAC (symmetric) - simple shared secret
 token = JwtSign(
-    claims = { sub: "user123", role: "admin" },
-    key = "your-256-bit-secret"
+	claims = { sub: "user123", role: "admin" },
+	key = keys.private,
+	expiresIn = 3600
 );
 
-// With expiration (seconds from now)
-token = JwtSign(
-    claims = { sub: "user123" },
-    key = "secret",
-    expiresIn = 3600    // 1 hour
-);
+claims = JwtVerify( token, keys.public );
 
-// RSA/EC (asymmetric) - use private key to sign
-keys = GenerateKeyPair( "RS256" );
-token = JwtSign(
-    claims = { sub: "user123" },
-    key = keys.private,
-    algorithm = "RS256",
-    issuer = "https://myapp.com",
-    audience = "https://api.myapp.com"
-);
-
-// EdDSA (modern, fast)
-keys = GenerateKeyPair( "Ed25519" );
-token = JwtSign(
-    claims = { sub: "user123" },
-    key = keys.private,
-    algorithm = "EdDSA"
-);
-
-// With Key ID for key rotation
-token = JwtSign(
-    claims = { sub: "user123" },
-    key = keys.private,
-    algorithm = "RS256",
-    kid = "key-2024-01"
-);
-```
-
-### Verify a JWT
-
-```cfml
-// Verify with HMAC secret
-claims = JwtVerify( token = token, key = "your-256-bit-secret" );
-writeOutput( claims.sub );  // "user123"
-
-// Verify with public key
-claims = JwtVerify( token = token, key = keys.public );
-
-// With issuer/audience validation
-claims = JwtVerify(
-    token = token,
-    key = keys.public,
-    issuer = "https://myapp.com",
-    audience = "https://api.myapp.com"
-);
-
-// Restrict allowed algorithms (security best practice)
-claims = JwtVerify(
-    token = token,
-    key = keys.public,
-    algorithms = "RS256"           // single algorithm
-    // or: algorithms = ["RS256", "RS384"]  // multiple
-);
-
-// Clock skew tolerance (seconds) for exp/nbf validation
-claims = JwtVerify(
-    token = token,
-    key = "secret",
-    clockSkew = 60    // allow 60 seconds leeway
-);
-
-// Non-throwing mode - returns result struct instead of throwing
-result = JwtVerify( token = token, key = "secret", throwOnError = false );
-if ( result.valid ) {
-    writeOutput( result.claims.sub );
-} else {
-    writeOutput( "Error: " & result.error );
-}
-```
-
-### Decode a JWT (without verification)
-
-Useful for debugging or when you need to inspect a token before verification.
-
-```cfml
-parts = JwtDecode( token );
-writeOutput( parts.header.alg );      // "RS256"
-writeOutput( parts.payload.sub );     // "user123"
-writeOutput( parts.signature );       // base64url signature
-```
-
-### JWK / JWKS Support
-
-Work with JSON Web Keys for OAuth2, OpenID Connect, and key distribution.
-
-```cfml
-// Convert a key pair to JWK
-keys = GenerateKeyPair( "RSA" );
-jwk = KeyToJwk( keys.public );       // public-only JWK for distribution
-jwk = KeyToJwk( keys );              // includes private key material
-
-// Convert JWK back to Java key
-pubKey = JwkToKey( jwk );
-pubKey = JwkToKey( jsonString );      // also accepts JSON strings
-
-// Load JWKS from a provider (e.g. OAuth2 / OpenID Connect)
-keys = JwksLoad( "https://accounts.google.com/.well-known/jwks.json" );
-keys = JwksLoad( jwksJsonString );    // or from a JSON string
-
-// Full JWT verification workflow with JWKS
-keys = JwksLoad( "https://provider.com/.well-known/jwks.json" );
-pubKey = JwkToKey( keys[ 1 ] );
-claims = JwtVerify( token, pubKey );
-```
-
-### Supported JWT Algorithms
-
-| Algorithm | Type | Description |
-| --------- | ---- | ----------- |
-| `HS256`, `HS384`, `HS512` | HMAC | Symmetric, shared secret |
-| `RS256`, `RS384`, `RS512` | RSA | Asymmetric, RSA keys |
-| `ES256`, `ES384`, `ES512` | ECDSA | Asymmetric, EC keys (P-256/384/521) |
-| `PS256`, `PS384`, `PS512` | RSA-PSS | Asymmetric, RSA-PSS padding |
-| `EdDSA` | EdDSA | Asymmetric, Ed25519/Ed448 keys |
-
-## Password Hashing
-
-Secure password hashing with Argon2, BCrypt, and SCrypt.
-
-The old function names (`GenerateArgon2Hash`, `Argon2CheckHash`, `VerifyArgon2Hash`, `GenerateBCryptHash`, `VerifyBCryptHash`, `GenerateSCryptHash`, `VerifySCryptHash`) still work but are deprecated. The new names follow a consistent `{Algorithm}Hash()` / `{Algorithm}Verify()` pattern, and `Argon2Hash()` upgrades to OWASP-recommended defaults (argon2id, 19 MB memory) — the old `GenerateArgon2Hash()` keeps the weak extension-argon2 defaults for backwards compat.
-
-### Argon2 (recommended for new applications)
-
-`Argon2Hash()` uses OWASP-recommended defaults (argon2id, 19 MB memory, 2 iterations).
-
-```cfml
-// Hash a password (OWASP defaults)
+// Password hashing (Argon2 with OWASP defaults)
 hash = Argon2Hash( "mypassword" );
-
-// With custom parameters
-hash = Argon2Hash(
-    input = "mypassword",
-    variant = "argon2id",      // argon2i, argon2d, or argon2id
-    parallelismFactor = 1,
-    memoryCost = 19456,        // KB (~19 MB)
-    iterations = 2
-);
-
-// Verify password
 isValid = Argon2Verify( "mypassword", hash );
 ```
 
-### BCrypt
-
-```cfml
-// Hash with default cost (10)
-hash = BCryptHash( "mypassword" );
-
-// With custom cost
-hash = BCryptHash( "mypassword", 12 );
-
-// Verify
-isValid = BCryptVerify( "mypassword", hash );
-```
-
-### SCrypt
-
-```cfml
-// Hash with defaults
-hash = SCryptHash( "mypassword" );
-
-// With custom parameters
-hash = SCryptHash(
-    input = "mypassword",
-    costParameter = 16384,     // N (must be power of 2)
-    blockSize = 8,             // r
-    parallelization = 1        // p
-);
-
-// Verify
-isValid = SCryptVerify( "mypassword", hash );
-```
-
-## TOTP / HOTP (Two-Factor Authentication)
-
-Time-based (RFC 6238) and counter-based (RFC 4226) one-time passwords for 2FA.
-
-### TOTP (Time-Based)
-
-```cfml
-// Generate a secret for the user
-secret = TOTPSecret();
-
-// Generate an otpauth:// URI for QR codes (scan with authenticator app)
-uri = TOTPGenerateUri( secret, "user@example.com", "MyApp" );
-
-// With custom options
-uri = TOTPGenerateUri( secret, "user@example.com", "MyApp", {
-    digits: 6,
-    period: 30,
-    algorithm: "SHA1"
-});
-
-// Verify a code entered by the user
-isValid = TOTPVerify( secret, userCode );
-
-// With custom window (clock skew tolerance)
-isValid = TOTPVerify( secret, userCode, { window: 2 } );
-```
-
-### HOTP (Counter-Based)
-
-```cfml
-// Generate a code for a given counter
-code = HOTPGenerate( secret, counter );
-
-// Verify a code
-isValid = HOTPVerify( secret, userCode, counter );
-
-// With look-ahead window for counter desync
-isValid = HOTPVerify( secret, userCode, counter, { window: 5 } );
-```
-
-## Certificates
-
-Generate and inspect X.509 certificates.
-
-```cfml
-// Generate a self-signed certificate
-keys = GenerateKeyPair( "RSA-2048" );
-cert = GenerateSelfSignedCertificate(
-    keyPair = keys,
-    subject = "CN=localhost, O=My Company, C=AU",
-    validityDays = 365
-);
-
-// Get certificate info
-info = CertificateInfo( cert );
-writeOutput( info.subject );
-writeOutput( info.validFrom );
-writeOutput( info.validTo );
-
-// Convert between PEM and Java objects
-certObj = PemToCertificate( pemString );
-pemString = CertificateToPem( certObj );
-
-// Generate a CSR for submission to a Certificate Authority
-keys = GenerateKeyPair( "RSA-2048" );
-csr = GenerateCSR( keys, "CN=example.com, O=My Company, C=AU" );
-
-// With Subject Alternative Names
-csr = GenerateCSR( keys, "CN=example.com", {
-    sans: [ "example.com", "www.example.com", "api.example.com" ]
-});
-```
-
-## Keystores
-
-Create and manage Java keystores (PKCS12, JKS).
-
-```cfml
-// Generate a new keystore with key pair and certificate
-GenerateKeystore(
-    keystore = "/path/to/keystore.p12",
-    keystorePassword = "changeit",
-    alias = "mykey",
-    algorithm = "RSA-2048",
-    subject = "CN=localhost"
-);
-
-// List aliases in a keystore
-aliases = KeystoreList( "/path/to/keystore.p12", "changeit" );
-
-// Extract key pair from keystore
-keys = GetKeyPairFromKeystore(
-    keystore = "/path/to/keystore.p12",
-    keystorePassword = "changeit",
-    keystoreAlias = "mykey"
-);
-// Returns: { private: "...", public: "...", certificate: "..." }
-```
-
-## Modern Hashing (Blake)
-
-Fast, secure hashing with the Blake family of algorithms.
-
-```cfml
-// Blake2b (optimized for 64-bit, faster than SHA-256)
-hash = GenerateBlake2bHash( "data" );
-hash = GenerateBlake2bHash( "data", 32 );              // custom output length
-hash = GenerateBlake2bHash( "data", 32, keyBytes );    // keyed (MAC)
-
-// Blake2s (optimized for 32-bit/embedded)
-hash = GenerateBlake2sHash( "data" );
-
-// Blake3 (latest, very fast, parallelizable)
-hash = GenerateBlake3Hash( "data" );
-hash = GenerateBlake3Hash( "data", 64 );                        // arbitrary output length
-hash = GenerateBlake3Hash( "data", 32, key32bytes );            // keyed mode
-hash = GenerateBlake3Hash( "data", 32, "", "MyApp context" );   // key derivation mode
-```
-
-## Key Derivation (HKDF)
-
-Derive keys from shared secrets using HKDF (used in TLS 1.3, Signal Protocol).
-
-```cfml
-// One-shot key derivation
-derivedKey = GenerateHKDFKey(
-    algorithm = "SHA256",
-    inputKeyMaterial = sharedSecret,
-    salt = saltBytes,
-    info = "encryption key",
-    outputLength = 32
-);
-
-// Two-phase (extract then expand multiple keys)
-prk = HKDFExtract( "SHA256", salt, sharedSecret );
-encryptionKey = HKDFExpand( "SHA256", prk, "encryption", 32 );
-authKey = HKDFExpand( "SHA256", prk, "authentication", 32 );
-```
-
-## Base64URL Encoding
-
-URL-safe Base64 encoding (used in JWTs, etc.).
-
-```cfml
-// Encode
-encoded = Base64UrlEncode( "Hello World" );
-encoded = Base64UrlEncode( binaryData );
-
-// Decode to binary
-binary = Base64UrlDecode( encoded );
-
-// Decode to string
-str = Base64UrlDecode( encoded, "UTF-8" );
-```
-
-## Post-Quantum Key Exchange (ML-KEM/Kyber)
-
-ML-KEM (formerly Kyber) provides quantum-resistant key encapsulation for establishing shared secrets.
-Both `Kyber` and `ML-KEM` naming conventions are supported.
-
-```cfml
-// Generate key pair (Kyber768 and ML-KEM-768 are equivalent)
-keys = GenerateKeyPair( "Kyber768" );
-// or: keys = GenerateKeyPair( "ML-KEM-768" );
-
-// Sender: encapsulate using recipient's public key
-result = KyberEncapsulate( keys.public );
-// result.sharedSecret = binary (use for encryption)
-// result.ciphertext = string (send to recipient)
-
-// Recipient: decapsulate using their private key
-sharedSecret = KyberDecapsulate( keys.private, result.ciphertext );
-// sharedSecret matches result.sharedSecret
-
-// Use shared secret for symmetric encryption
-encrypted = Encrypt( "secret message", binaryEncode( sharedSecret, "base64" ), "AES", "Base64" );
-```
-
-## Supported Algorithms
-
-### Key Pair Algorithms
-
-| Algorithm | Description |
-| --------- | ----------- |
-| `RSA`, `RSA-2048`, `RSA-4096` | RSA with specified key size |
-| `EC`, `P-256`, `P-384`, `P-521` | ECDSA with NIST curves |
-| `Ed25519`, `Ed448` | EdDSA (modern, fast signatures) |
-| `Kyber512`, `Kyber768`, `Kyber1024` | Post-quantum key encapsulation (ML-KEM) |
-| `ML-KEM-512`, `ML-KEM-768`, `ML-KEM-1024` | Same as Kyber (NIST standard name) |
-| `Dilithium2`, `Dilithium3`, `Dilithium5` | Post-quantum signatures |
-
-### Hash Algorithms for HKDF
-
-| Algorithm | Output Size |
-| --------- | ----------- |
-| `SHA256` | 32 bytes |
-| `SHA384` | 48 bytes |
-| `SHA512` | 64 bytes |
-
-## Requirements
-
-- Lucee 7.0.3+
-- Java 11 or later
-
 ## Technical Details
-
-This extension uses:
-
-- [BouncyCastle](https://www.bouncycastle.org/) for cryptographic operations
-- [Nimbus JOSE+JWT](https://connect2id.com/products/nimbus-jose-jwt) for JWT and JWK support
 
 Maven-based extension using embedded `/maven/` repo layout with `maven=` attribute in the FLD. No OSGi bundles.
 
