@@ -1,6 +1,6 @@
 component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 
-	variables.testDir = getDirectoryFromPath( getCurrentTemplatePath() ) & "keystore-test/";
+	variables.testDir = getTempDirectory( "keystore-test" );
 	variables.keystorePath = variables.testDir & "test.p12";
 	variables.keystorePassword = "testpass123";
 	variables.alias = "testkey";

@@ -17,7 +17,7 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 				expect( isBinary( cose[ "-3" ] ) ).toBeTrue(); // y coordinate
 
 				// Convert back and verify signature
-				var pubKey = CoseToKey( cose );
+				var pubKey = CoseToKey( cose ).public;
 
 				var sig = GenerateSignature(
 					data = "test data",
@@ -43,7 +43,7 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 				expect( cose[ "3" ] ).toBe( -35 );   // alg = ES384
 				expect( cose[ "-1" ] ).toBe( 2 );   // crv = P-384
 
-				var pubKey = CoseToKey( cose );
+				var pubKey = CoseToKey( cose ).public;
 
 				var sig = GenerateSignature(
 					data = "test data",
@@ -69,7 +69,7 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 				expect( cose[ "3" ] ).toBe( -36 );   // alg = ES512
 				expect( cose[ "-1" ] ).toBe( 3 );   // crv = P-521
 
-				var pubKey = CoseToKey( cose );
+				var pubKey = CoseToKey( cose ).public;
 
 				var sig = GenerateSignature(
 					data = "test data",
@@ -96,7 +96,7 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 				expect( cose[ "-1" ] ).toBe( 6 );   // crv = Ed25519
 				expect( isBinary( cose[ "-2" ] ) ).toBeTrue(); // x coordinate
 
-				var pubKey = CoseToKey( cose );
+				var pubKey = CoseToKey( cose ).public;
 
 				var sig = GenerateSignature(
 					data = "test data",
@@ -126,7 +126,8 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 				expect( isBinary( cose[ "-4" ] ) ).toBeTrue();
 
 				// Roundtrip the private key
-				var privKey = CoseToKey( cose );
+				var keys = CoseToKey( cose );
+				var privKey = keys.private;
 
 				// Sign with the roundtripped private key
 				var sig = GenerateSignature(
@@ -177,7 +178,7 @@ component extends="org.lucee.cfml.test.LuceeTestCase" labels="crypto" {
 				var cborBytes = CborEncode( cose );
 
 				// CoseToKey should decode CBOR internally
-				var pubKey = CoseToKey( cborBytes );
+				var pubKey = CoseToKey( cborBytes ).public;
 
 				var sig = GenerateSignature(
 					data = "cbor test",

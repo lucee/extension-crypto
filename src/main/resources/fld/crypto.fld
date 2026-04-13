@@ -1482,7 +1482,7 @@
 	<function>
 		<name>CoseToKey</name>
 		<class maven="${project.groupId}:${project.artifactId}:${project.version}">org.lucee.extension.crypto.CoseToKey</class>
-		<description>Converts a COSE key (struct with integer keys per RFC 9052, or raw CBOR bytes) to a Java security key object. Supports EC (P-256, P-384, P-521) and Ed25519 keys.</description>
+		<description>Converts a COSE key (struct with integer keys per RFC 9052, or raw CBOR bytes) to a Java security key. Returns a PublicKey when only public material is present, or a key pair struct (with 'public' and 'private' keys) when both are present. Supports EC (P-256, P-384, P-521) and Ed25519 keys.</description>
 		<argument>
 			<name>coseKey</name>
 			<type>any</type>
@@ -1490,8 +1490,8 @@
 			<description>COSE key as a struct (from CborDecode) or raw CBOR-encoded binary</description>
 		</argument>
 		<return>
-			<type>any</type>
-			<description>Java PublicKey or PrivateKey object</description>
+			<type>struct</type>
+			<description>Struct with 'public' key, and 'private' key when private key material is present</description>
 		</return>
 	</function>
 

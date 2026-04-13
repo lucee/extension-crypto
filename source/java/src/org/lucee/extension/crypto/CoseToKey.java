@@ -96,7 +96,7 @@ public class CoseToKey extends BIF {
 		}
 	}
 
-	private static Key buildEcKey( Cast cast, CFMLEngine eng, Struct cose, int crv, byte[] x ) throws Exception {
+	private static Object buildEcKey( Cast cast, CFMLEngine eng, Struct cose, int crv, byte[] x ) throws Exception {
 		byte[] y = getBinaryField( cast, cose, eng, "-3" );
 		byte[] d = getBinaryFieldOrNull( cast, cose, eng, "-4" );
 
@@ -119,22 +119,25 @@ public class CoseToKey extends BIF {
 		ECParameterSpec ecSpec = getEcParameterSpec( curveName );
 		KeyFactory kf = KeyFactory.getInstance( "EC", "BC" );
 
-		// If d is present, build private key
-		if ( d != null ) {
-			BigInteger dInt = new BigInteger( 1, d );
-			ECPrivateKeySpec privSpec = new ECPrivateKeySpec( dInt, ecSpec );
-			return kf.generatePrivate( privSpec );
-		}
-
-		// Build public key
+		// Always build public key
 		BigInteger xInt = new BigInteger( 1, x );
 		BigInteger yInt = new BigInteger( 1, y );
 		ECPoint point = new ECPoint( xInt, yInt );
 		ECPublicKeySpec pubSpec = new ECPublicKeySpec( point, ecSpec );
-		return kf.generatePublic( pubSpec );
+		Key pubKey = kf.generatePublic( pubSpec );
+
+		// If d is present, also build private key and return key pair struct
+		if ( d != null ) {
+			BigInteger dInt = new BigInteger( 1, d );
+			ECPrivateKeySpec privSpec = new ECPrivateKeySpec( dInt, ecSpec );
+			Key privKey = kf.generatePrivate( privSpec );
+			return createKeyStruct( eng, pubKey, privKey );
+		}
+
+		return createKeyStruct( eng, pubKey, null );
 	}
 
-	private static Key buildOkpKey( Cast cast, CFMLEngine eng, Struct cose, int crv, byte[] x ) throws Exception {
+	private static Object buildOkpKey( Cast cast, CFMLEngine eng, Struct cose, int crv, byte[] x ) throws Exception {
 		byte[] d = getBinaryFieldOrNull( cast, cose, eng, "-4" );
 
 		if ( crv != CRV_ED25519 ) {
@@ -144,16 +147,31 @@ public class CoseToKey extends BIF {
 
 		KeyFactory kf = KeyFactory.getInstance( "Ed25519", "BC" );
 
-		// If d is present, build private key
+		// Always build public key from raw x coordinate
+		byte[] x509 = wrapEd25519PublicKey( x );
+		Key pubKey = kf.generatePublic( new java.security.spec.X509EncodedKeySpec( x509 ) );
+
+		// If d is present, also build private key and return key pair struct
 		if ( d != null ) {
-			// Ed25519 private key: wrap in PKCS#8 ASN.1 structure
 			byte[] pkcs8 = wrapEd25519PrivateKey( d );
-			return kf.generatePrivate( new java.security.spec.PKCS8EncodedKeySpec( pkcs8 ) );
+			Key privKey = kf.generatePrivate( new java.security.spec.PKCS8EncodedKeySpec( pkcs8 ) );
+			return createKeyStruct( eng, pubKey, privKey );
 		}
 
-		// Build public key from raw x coordinate
-		byte[] x509 = wrapEd25519PublicKey( x );
-		return kf.generatePublic( new java.security.spec.X509EncodedKeySpec( x509 ) );
+		return createKeyStruct( eng, pubKey, null );
+	}
+
+	/**
+	 * Create a key struct with 'public' and optionally 'private' key, matching GenerateKeyPair output.
+	 */
+	private static Struct createKeyStruct( CFMLEngine eng, Key pubKey, Key privKey ) throws PageException {
+		Cast cast = eng.getCastUtil();
+		Struct kp = eng.getCreationUtil().createStruct();
+		kp.set( cast.toKey( "public" ), pubKey );
+		if ( privKey != null ) {
+			kp.set( cast.toKey( "private" ), privKey );
+		}
+		return kp;
 	}
 
 	/**
@@ -184,7 +202,7 @@ public class CoseToKey extends BIF {
 		System.arraycopy( rawKey, 0, innerOctet, 2, rawKey.length );
 
 		byte[] prefix = new byte[] {
-			0x30, (byte) ( 2 + 3 + 7 + 2 + innerOctet.length ), // SEQUENCE
+			0x30, (byte) ( 3 + 7 + 2 + innerOctet.length ), // SEQUENCE
 			0x02, 0x01, 0x00, // INTEGER version = 0
 			0x30, 0x05, // SEQUENCE - AlgorithmIdentifier
 			0x06, 0x03, 0x2b, 0x65, 0x70, // OID 1.3.101.112
