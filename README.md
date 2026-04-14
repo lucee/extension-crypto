@@ -11,7 +11,7 @@ Modern cryptographic functions for Lucee, powered by [BouncyCastle](https://www.
 Install via Lucee Admin, or pin in your environment:
 
 ```bash
-LUCEE_EXTENSIONS=org.lucee:crypto-extension:1.0.0.0-SNAPSHOT
+LUCEE_EXTENSIONS=org.lucee:crypto-extension:1.0.0.1-SNAPSHOT
 ```
 
 ## Documentation
